@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>S10.view_3_days</title> 
+<link rel="stylesheet" type="text/css" href="webix.css">
+<script type="text/javascript" src="webix.js"></script>
+<style>  body { background: url(s10adds.png); background-repeat: no-repeat; background-size: cover;} </style>
+<style> .tpred { color: #EC3774; background: #fff; border: .4em solid; border-color: rgb(256,256,256); margin: 0 0 0 -.4em;}</style>
+<style> .tpblue { color: #00ccff; background: #fff; border: .4em solid; border-color: rgb(256,256,256); margin: 0 0 0 -.4em;}</style>
+<style> .tpyellow { color: #e9df40; background: #fff; border: .4em solid; border-color: rgb(256,256,256); margin: 0 0 0 -.4em;}</style>
+</head>
+
+<body>
+
+
+    <pre id="output"></pre>
+
+<script type="text/javascript">
+
+
+var a = "";
+var b ;
+var c ;
+var d ;
+var m1 = "mountPage('studentTasks',";
+var m2 = "<!-- Meta Pixel Code -->" ;
+var m3 = '"trainingsRequests":';	
+
+var f ;
+
+
+// 1. Сразу сообщаем родителю, что мы загрузились
+if (window.opener) {
+    window.opener.postMessage("PARSER_READY", "*");
+} else {
+    alert("Запустите букмарклет на фоне раздела задач S10.run");
+}
+
+//        document.getElementById('inputfile').addEventListener('change', function () {
+//                fff = this.files[0].name;
+//                let fr = new FileReader();
+//                fr.onload = function () {    a= fr.result;
+
+window.addEventListener("message", (event) => {
+    // Проверка, что пришло именно наше сообщение
+    if (event.data && event.data.type === "DATA_PAYLOAD") {
+        const receivedText = event.data.text;
+//        console.log("Успех! Получено символов:", receivedText.length);
+		a=receivedText;
+
+
+// Пример использования:
+//const myPageContent = await getPageContent('https://s10.run/student?1000008935&v2=1#/');
+//const myPageContent = getPageContent('https://s10.run/student?1000008935&v2=1#/');
+
+//alert(a);
+
+
+				
+ if ( a.includes(m1) && a.includes(m2)	) {	  
+				
+                b="["+ a.slice(a.indexOf(m1)+m1.length);
+//                c=b.slice(0,b.lastIndexOf(m2)-13)+"]";
+                c=b.slice(0,b.lastIndexOf(m3))+'"trainingsRequests": []}]';
+
+//alert(c.slice(-40));
+	 
+} else {
+
+return alert("Запустите букмарклет на фоне раздела задач S10.run");
+
+}
+
+
+
+                d=JSON.parse(c);
+
+//document.getElementById('output').textContent = c.slice(0, 300) + "\n=================================================\n" + c.slice(-400);  
+
+//document.getElementById('student').textContent = 'student:'  + '        ' + Valid_Student();
+//document.getElementById('trainer').textContent = 'trainer:'  + '        ' + Valid_Trainer();
+//document.getElementById('ffile').textContent = 'file:'       + '        ' + fff;
+//document.getElementById('inputfile').setAttribute("type", "hidden");
+
+function formatDate(date) {
+    // Разделяет "2023-03-15" на ["2023", "03", "15"]
+    const parts = date.split('-');
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+
+function Valid_Student() {
+  try {
+    t=d[0].studentInfo.firstName + " " + d[0].studentInfo.lastName;
+    return t.trim();
+  } catch {
+    return "";
+  }
+}
+
+function Valid_Trainer() {
+  try {
+    t=d[0].trainerInfo.firstName + " " + d[0].trainerInfo.lastName;
+    return t.trim();
+  } catch {
+    return "";
+  }
+}
+
+function Valid_Comment(r,t) {
+  try {
+    return d[0].studentTasksInfo.diaryTasks[r].reportParameters.comment;
+  } catch {
+    return t;
+  }
+}
+
+
+function Valid_Ttype(r,t) {
+  try {
+
+if ( r === 0 ) return t ; 
+
+ t="";
+switch (d[0].studentTasksInfo.diaryTasks[r].type) {
+  case 0:
+    t = ""; // отдых
+    break;
+  case 1:
+    t = "Восстановительная";
+    break;
+  case 2:
+    t = "Развивающая";
+    break;
+  case 3:
+    t = "Интервальная";
+    break;
+  case 4:
+    t = "Повторная";
+    break;
+  case 5:
+    t = "Длительная";
+    break;
+  case 6:
+    t = "";
+    break;
+  case 7:
+    t = "Силовая";
+    break;		
+  default:
+    t = ""; // Handles unexpected values
+}
+    return t;
+
+  } catch {
+    return t;
+  }
+}
+
+function Valid_Job(r,t) {
+  try {
+    return d[0].studentTasksInfo.diaryTasks[r].comment;
+  } catch {
+    return t;
+  }
+}
+
+
+
+
+function Valid_trubl(r,t) {
+  try {
+
+var tr = ['','легко','нормально','тяжело, но сделал','тяжело и не сделал','травма'];
+    return tr[d[0].studentTasksInfo.diaryTasks[r].reportParameters.difficulty];
+  } catch {
+    return t;
+  }
+}
+
+n2 = d[0].studentTasksInfo.diaryTasks.length;
+n1 = n2-21;
+
+c2 = "</br>" ;
+
+for(var i = n1; i < n2 ; i++){
+
+c0 = Valid_Comment(i,"")
+
+  c0 = c0.replace(/"/g, "'");
+  c0 = c0.replace(/(\r\n|\n|\r)/gm, ""); 
+  c0 = c0.replace(/<[^>]*>/g, '');
+  c2 = c2 + "<span style='color:blue'>--- " + d[0].studentTasksInfo.diaryTasks[i].date + " [ " + Valid_Ttype(i,"") + " ] " + Valid_Job(i,"") + "</span></br>" + c0 + "</br>\n"
+}
+
+c2 = c2.slice(0,c2.length-2);
+
+//document.getElementById('output').textContent = c2; 
+
+cmnt1= { id: "cmnt1",
+  type:"space",
+//      width:400,
+      height: 820,
+	  scroll:"y",
+      template: c2
+ };
+
+
+function Valid_km(r,t) {
+ 
+ try {
+    
+	if (d[0].studentTasksInfo.diaryTasks[r].kmCompleted == null) {
+	return t;
+	}
+else
+  {	
+	return d[0].studentTasksInfo.diaryTasks[r].kmCompleted;
+  }
+  
+  } catch {
+    return t;
+  }
+}
+
+function Valid_C(r,t) {
+  try {
+    return d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.weather.temp_c;
+  } catch {
+    return t;
+  }
+}
+
+ 
+
+bldate = "";
+
+for(var i = n1; i < n2 ; i++){
+if ( Valid_km(i,0) == 0 ) {
+bldate = bldate + d[0].studentTasksInfo.diaryTasks[i].date + ","
+}
+}
+
+//console.log(bldate);
+
+
+e1 = Math.max(Valid_km(n1+0,0),Valid_km(n1+7,0),Valid_km(n1+14,0));
+e2 = Math.max(Valid_km(n1+1,0),Valid_km(n1+8,0),Valid_km(n1+15,0));
+e3 = Math.max(Valid_km(n1+2,0),Valid_km(n1+9,0),Valid_km(n1+16,0));
+e4 = Math.max(Valid_km(n1+3,0),Valid_km(n1+10,0),Valid_km(n1+17,0));
+e5 = Math.max(Valid_km(n1+4,0),Valid_km(n1+11,0),Valid_km(n1+18,0));
+e6 = Math.max(Valid_km(n1+5,0),Valid_km(n1+12,0),Valid_km(n1+19,0));
+e7 = Math.max(Valid_km(n1+6,0),Valid_km(n1+13,0),Valid_km(n1+20,0));
+
+
+
+//function Valid_Pace(r,s,t) {
+//  try {
+//const tmp = [];
+//for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+// for(var j=0; j < d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments.length ; j++){
+// tmp.push(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments[j].pace);
+// }
+//}
+//        return tmp[s];
+//
+//  } catch {
+//    return t;
+//  }
+//}
+//============================
+
+
+ind1 = 0;
+ind2 = 0;
+ind3 = 0;
+
+ee = 0;
+
+function setind() {
+
+if ( $$('cal1').getValue() !== null ) {
+for(var i = n1; i < n2 ; i++){
+ if ( $$('cal1').getValue().toLocaleDateString('en-CA') == d[0].studentTasksInfo.diaryTasks[i].date ) {
+  ind1 = i;
+  }
+ }
+} else {
+ind1 = 0;
+}
+
+if ( $$('cal2').getValue() !== null ) {
+for(var i = n1; i < n2 ; i++){
+ if ( $$('cal2').getValue().toLocaleDateString('en-CA') == d[0].studentTasksInfo.diaryTasks[i].date ) {
+  ind2 = i;
+  }
+ }
+} else {
+ind2 = 0;
+}
+
+
+if ( $$('cal3').getValue() !== null ) {
+for(var i = n1; i < n2 ; i++){
+ if ( $$('cal3').getValue().toLocaleDateString('en-CA') == d[0].studentTasksInfo.diaryTasks[i].date ) {
+  ind3 = i;
+  }
+ }
+} else {
+ind3 = 0;
+}
+
+
+
+}
+
+//function Set_ind() {
+//  try {
+
+//n2 = d[0].studentTasksInfo.diaryTasks.length;
+//n1 = n2-21;
+
+
+
+//alert(ind1);
+
+//return;
+
+//  } catch {
+//    return;
+//  }
+//}
+
+//Set_ind();
+
+
+
+function Valid_Pace(r,s,t) {
+  try {
+const tmp = [];
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ for(var j=0; j < d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments.length ; j++){
+ tmp.push(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments[j].pace);
+ }
+}
+
+        return tmp[s];
+
+  } catch {
+  
+      try {
+			const tmp = [];
+			for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+			for(var j=0; j < d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.laps.length ; j++){
+			tmp.push(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.laps[j].average_speed);
+				}
+			}	  
+            
+            num=(1000/tmp[s])/60;			
+			
+//			return num.toFixed(2);
+            return (Math.round(num * 100) / 100) + 0.01; 
+			
+           } catch {
+
+	       	return t;
+	
+	      }
+    
+	return t;
+  }
+}
+
+//============================
+
+// 24 slots for pace slots
+
+let slots = ["2:50","3:00","3:10","3:20","3:30","3:40","3:50","4:00","4:10","4:20","4:30","4:40","4:50","5:00","5:10","5:20","5:30","5:40","5:50","6:00","6:10","6:20","6:30","6:40"];
+
+
+function Valid_Slot(r,s,t) {
+ 
+ try {
+
+const z24 = Array(24).fill(0);
+ind = 0;
+
+//console.log('r=' +r+',s='+s);
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ for(var j=0; j < Object.values(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.pacebuckets).length ; j++){
+
+    ind = slots.indexOf(Object.keys(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.pacebuckets)[j]);
+
+//alert(ind);
+
+	if ( ind > -1 ) {
+	
+	z24[ind] = z24[ind] + Object.values(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.pacebuckets)[j];
+
+	
+	}
+
+ }
+}
+
+//console.log('z24=' +z24[s]+'\n');
+
+
+        return Math.round((z24[s]/1000) * 10) / 10;
+
+  } catch {
+    
+	return t;
+  }
+}
+
+
+
+// d[0].studentTasksInfo.diaryTasks[5].tracks[0].json.pacebuckets - обьект (в фигурных скобках ключ : значение) 1й трек дня 5
+// Object.values(d[0].studentTasksInfo.diaryTasks[5].tracks[0].json.pacebuckets).length - 26 число значений
+// Object.values(d[0].studentTasksInfo.diaryTasks[5].tracks[0].json.pacebuckets) массив значений 
+// Object.values(d[0].studentTasksInfo.diaryTasks[5].tracks[0].json.pacebuckets)[0] первый элемент (значение) 25
+// Object.keys(d[0].studentTasksInfo.diaryTasks[5].tracks[0].json.pacebuckets)[0] первый ключ 3:50
+
+
+function Valid_MaxHeart(r,t) {
+  try {
+var tmp = 0;
+var tt = 0;
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tt = d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.max_heartrate;
+if ( tt === undefined) {
+    throw new Error("Переменная tt не определена (undefined)!");
+}
+ tmp = Math.max(tmp,tt);
+ }
+if ( tmp === 0 ) {
+return t; 
+} else {
+  return tmp;
+ }
+
+ } catch {
+      try {
+			tmp = 0;
+			tt = 0;
+			for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+			for(var j=0; j < d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.laps.length ; j++){
+             tt = d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.laps[j].hr ;
+
+if ( tt === undefined) {
+    throw new Error("Переменная tt2 не определена (undefined)!");
+}
+			tmp = Math.max(tmp,tt);
+				}
+			}	  
+if ( tmp === 0 ) {
+return t; 
+} else {
+  return tmp;
+ }
+           } catch {
+	       	return t;
+	      }
+    return t;
+  }
+}
+
+
+function Valid_AvgHeart(r,t) {
+  try {
+var tmp = 0;
+var tt = 0;
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tt = d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.average_heartrate;
+if ( tt === undefined) {
+    throw new Error("Переменная tt не определена (undefined)!");
+}
+ tmp = tmp+tt;
+ }
+        return tmp/d[0].studentTasksInfo.diaryTasks[r].tracks.length;
+ } catch {
+      try {
+			tmp = 0;
+			tt = 0;
+			ttt = 0;
+			for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+			for(var j=0; j < d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.laps.length ; j++){
+             tt = d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.laps[j].hr ;
+
+if ( tt === undefined) {
+    throw new Error("Переменная tt2 не определена (undefined)!");
+}
+			tmp = tmp+tt;
+			ttt = ttt+1;
+				}
+			}	  
+            return tmp/ttt;
+           } catch {
+	       	return t;
+	      }
+    return t;
+  }
+}
+
+
+//============================
+function Valid_M200(r,t) {
+  try {
+var tmp = d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.fastest[200].pace;
+
+if ( d[0].studentTasksInfo.diaryTasks[r].kmCompleted >= 0.200 ) {
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = Math.min(tmp,d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.fastest[200].pace);
+ }
+    return tmp;
+} else {
+    return t;
+}	
+
+  } catch {
+    return t;
+  }
+}
+
+function Valid_M1000(r,t) {
+  try {
+var tmp = d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.fastest[1000].pace;
+
+if ( d[0].studentTasksInfo.diaryTasks[r].kmCompleted >= 1.000 ) {
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = Math.min(tmp,d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.fastest[1000].pace);
+ }
+        return tmp;
+} else {
+    return t;
+}	
+
+  } catch {
+    return t;
+  }
+}
+
+function Valid_M5000(r,t) {
+  try {
+var tmp = d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.fastest[5000].pace;
+
+if ( d[0].studentTasksInfo.diaryTasks[r].kmCompleted >= 5.000 ) {
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = Math.min(tmp,d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.fastest[5000].pace);
+ }
+        return tmp;
+} else {
+    return t;
+}	
+
+  } catch {
+    return t;
+  }
+}
+
+function Valid_M10000(r,t) {
+  try {
+var tmp = d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.fastest[10000].pace;
+
+if ( d[0].studentTasksInfo.diaryTasks[r].kmCompleted >= 10.000 ) {
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = Math.min(tmp,d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.fastest[10000].pace);
+ }
+        return tmp;
+} else {
+    return t;
+}	
+
+
+  } catch {
+    return t;
+  }
+}
+
+function Valid_M21097(r,t) {
+  try {
+var tmp = d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.fastest[21097].pace;
+
+if ( d[0].studentTasksInfo.diaryTasks[r].kmCompleted >= 21.097 ) {
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = Math.min(tmp,d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.fastest[21097].pace);
+ }
+        return tmp;
+} else {
+    return t;
+}	
+
+
+  } catch {
+    return t;
+  }
+}
+
+
+
+//=============================
+
+function Valid_impulse(r,t) {
+  try {
+var tmp = 0;
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = Math.max(tmp,d[0].studentTasksInfo.diaryTasks[r].tracks[i].impulse);
+ }
+        return tmp;
+  } catch {
+    return t;
+  }
+}
+
+
+function Valid_gs(r,t) {
+  try {
+var tmp = 100;
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = Math.min(tmp,d[0].studentTasksInfo.diaryTasks[r].tracks[i].gs);
+ }
+        return tmp;
+  } catch {
+    return t;
+  }
+}
+
+
+function Valid_Gain(r,t) {
+  try {
+var tmp = 0;
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = tmp + d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.total_elevation_gain;
+ }
+        return tmp;
+
+  } catch {
+    return t;
+  }
+}
+
+function Valid_Timed(r,t) {
+  try {
+var tmp = 0;
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = tmp + d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.moving_time;
+ }
+
+        return tmp/60;
+
+  } catch {
+    return t;
+  }
+}
+
+function ValidMin(timeStr) {
+
+if (timeStr.length > 0) {
+  var ss = parseInt(timeStr.substr(-2), 10);
+} else {
+  var ss = 0;
+}
+if (timeStr.length > 3) {
+  var mm = parseInt(timeStr.substr(-5,2), 10); 
+} else {
+  var mm = 0;
+}
+if (timeStr.length > 6) {
+  var hh = parseInt(timeStr.substr(-8,2), 10);
+} else {
+  var hh = 0;
+}
+
+ 
+ return ((hh*60*60)+(mm*60)+ss)/60;
+}
+
+
+function Valid_Timea(r,t) {
+  try {
+var tmp = 0;
+
+for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+ tmp = tmp + ValidMin(d[0].studentTasksInfo.diaryTasks[r].tracks[i].absolute);
+ }
+
+        return tmp;
+
+  } catch {
+    return t;
+  }
+}
+
+
+function To_Pace(m) {
+var mm = Math.floor(Math.abs(m));
+var tt = Math.floor(((Math.abs(m)-mm)*6000)/100);
+if (tt >9) {
+var ss = String(tt);
+} else {
+var ss = "0" + String(tt);
+}
+return mm + ":" + ss;
+}
+
+
+
+
+// -----------------------------------------
+
+//ind1=6
+
+f1 = "" ;
+
+for(var i = 0; i < 24 ; i++){
+  
+//  f1 = f1 + '{ "pace14":"' + Valid_Slot(n1+14,i,"") + '", "pace7":"' + Valid_Slot(n1+7,i,"") + '", "pace0":"' + Valid_Slot(n1,i,"") + '", "m":"' + slots[i] + '"},\n'
+
+f1 = f1 + '{ "pace14":"' ;
+if ( ind3 > 0 ) {f1 = f1 + Valid_Slot(ind3,i,"");} 
+f1 = f1 + '", "pace7":"' ;
+if ( ind2 > 0 ) {f1 = f1 + Valid_Slot(ind2,i,"");} 
+f1 = f1 + '", "pace0":"' ;
+if ( ind1 > 0 ) {f1 = f1 + Valid_Slot(ind1,i,"");} 
+f1 = f1 + '", "m":"' + slots[i] + '"},\n'
+ }
+
+f1 = "[\n" + f1.slice(0,f1.length-2) + "\n]" ;
+
+//console.log(f1);
+
+gg = JSON.parse(f1);
+// 254
+gr0 = { width:720,  height:194,  type:"clean", 
+cols:[
+        {
+          view:"chart",
+          id: "gslot",
+		  type:"line",
+          padding:{left:25,bottom: 17  },
+          preset:"plot",
+          xAxis:{
+            template:"'#m#"
+          },
+          yAxis:{
+		  },
+  legend:{layout:"x", height:-10, align:"center", valign:"middle",
+    values:[
+      {text:"", toggle:true,markerType: "item"},
+      {text:"", toggle:true,markerType: "item"},
+      {text:"" + "   km/Slot", toggle:true,markerType: "item"}
+    ]
+  }	,	  
+  scheme:{ $group: { by:"m",  map:{
+        pace14:["pace14","any"],
+        pace7:["pace7","any"],
+        pace0:["pace0","any"]
+      }
+    }
+  },  series:[
+    {  type:"spline", id:"s11", value:"#pace0#", tooltip:{css:"tpred", template:function(obj) {return obj.pace0;}}, item:{radius:3,borderColor: "#EC3774"}, line:{color:"#EC3774",width:2} },
+    {  type:"spline", id:"s12", value:"#pace7#", tooltip:{css:"tpblue",template:function(obj) {return obj.pace7;}}, item:{radius:3,borderColor: "#00ccff"}, line:{color:"#00ccff",width:2} },
+    {  type:"spline", id:"s13", value:"#pace14#", tooltip:{css:"tpyellow",template:function(obj) {return obj.pace14;}}, item:{radius:3,borderColor: "#e9df40"}, line:{color:"#e9df40",width:2} }
+
+  ],		  
+          data: gg
+        }
+
+]
+};
+
+///////////////////////
+
+
+f2 = "" ;
+ee = 10;
+
+for(var i = 0; i < ee ; i++){
+  
+//  f2 = f2 + '{ "pace15":"-' + Valid_Pace(n1+15,i,"") + '", "pace8":"-' + Valid_Pace(n1+8,i,"") + '", "pace1":"-' + Valid_Pace(n1+1,i,"") + '", "km":"' + (i+1) + '"},\n'
+
+f2 = f2 + '{ "pace15":"-' ;
+if ( ind3 > 0 ) {f2 = f2 + Valid_Pace(ind3,i,"");} 
+f2 = f2 + '", "pace8":"-' ;
+if ( ind2 > 0 ) {f2 = f2 + Valid_Pace(ind2,i,"");} 
+f2 = f2 + '", "pace1":"-' ;
+if ( ind1 > 0 ) {f2 = f2 + Valid_Pace(ind1,i,"");} 
+f2 = f2 + '", "km":"' + (i+1) + '"},\n'
+ }
+
+f2 = "[\n" + f2.slice(0,f2.length-2) + "\n]" ;
+
+//console.log(f2);
+
+gg = JSON.parse(f2);
+
+gr1 = {  width:720,  height:194,  type:"clean", 
+cols:[
+        {
+          view:"chart",
+		  id:"gpace",
+          type:"line",
+          padding:{left:25,bottom: 17  },
+          preset:"plot",
+          xAxis:{
+            template:"'#km#"
+          },
+          yAxis:{start:-7, step:1, end:-3,template: function(obj) {return Math.abs(obj);}
+		  },
+  legend:{layout:"x", height:-10, align:"center", valign:"middle",
+    values:[
+      {text:"", toggle:"s10",markerType: "item"},
+      {text:"", toggle:"s20",markerType: "item"},
+      {text:"" + "  pace/km", toggle:"s30",markerType: "item"}
+    ]
+  }	,	  
+  scheme:{ $group: { by:"km",  map:{
+        pace15:["pace15","any"],
+        pace8:["pace8","any"],
+        pace1:["pace1","any"]
+      }
+    }
+  },  series:[
+    {  type:"spline", id:"s10", value:"#pace1#", tooltip:{css:"tpred", template:function(obj) {return To_Pace(obj.pace1);}}, item:{radius:3,borderColor: "#EC3774"}, line:{color:"#EC3774",width:2} },
+    {  type:"spline", id:"s20", value:"#pace8#", tooltip:{css:"tpblue",template:function(obj) {return To_Pace(obj.pace8);}}, item:{radius:3,borderColor: "#00ccff"}, line:{color:"#00ccff",width:2} },
+    {  type:"spline", id:"s30", value:"#pace15#", tooltip:{css:"tpyellow",template:function(obj) {return To_Pace(obj.pace15);}}, item:{radius:3,borderColor: "#e9df40"}, line:{color:"#e9df40",width:2} }
+  ],		  
+          data: gg
+        }
+
+]
+};
+
+
+f3 = "" ;
+
+for(var i = 0; i < e3 ; i++){
+  f3 = f3 + '{ "pace16":"-' + Valid_Pace(n1+16,i,"") + '", "pace9":"-' + Valid_Pace(n1+9,i,"") + '", "pace2":"-' + Valid_Pace(n1+2,i,"") + '", "km":"' + (i+1) + '"},\n'
+ }
+
+f3 = "[\n" + f3.slice(0,f3.length-2) + "\n]" ;
+
+gg = JSON.parse(f3);
+
+gr2 = {  width:720,  height:194,  type:"clean", 
+cols:[
+        {
+          view:"chart",
+          type:"line",
+          padding:{left:25,bottom: 17  },
+          preset:"plot",
+          xAxis:{
+            template:"'#km#"
+          },
+          yAxis:{start:-7, step:1, end:-3,template: function(obj) {return Math.abs(obj);}},
+  legend:{layout:"x", height:-10, align:"center", valign:"middle",
+    values:[
+      {text:d[0].studentTasksInfo.diaryTasks[n1+2].date+"  pace/km", toggle:true,markerType: "item"},
+      {text:"-7", toggle:true,markerType: "item"},
+      {text:"-14", toggle:true,markerType: "item"}
+    ]
+  }	,	  
+  scheme:{ $group: { by:"km",  map:{
+        pace16:["pace16","any"],
+        pace9:["pace9","any"],
+        pace2:["pace2","any"]
+      }
+    }
+  },  series:[
+    {  type:"line",  value:"#pace16#", tooltip:{css:"tpyellow",template:function(obj) {return To_Pace(obj.pace16);}}, item:{radius:3,borderColor: "#e9df40"}, line:{color:"#e9df40",width:2} },
+    {  type:"line",  value:"#pace9#", tooltip:{css:"tpblue",template:function(obj) {return To_Pace(obj.pace9);}}, item:{radius:3,borderColor: "#00ccff"}, line:{color:"#00ccff",width:2} },
+    {  type:"line",  value:"#pace2#", tooltip:{css:"tpred", template:function(obj) {return To_Pace(obj.pace2);}}, item:{radius:3,borderColor: "#EC3774"}, line:{color:"#EC3774",width:2} }
+  ],		  
+          data: gg
+        }
+
+]
+};
+
+
+f4 = "" ;
+
+for(var i = 0; i < e4 ; i++){
+  f4 = f4 + '{ "pace17":"-' + Valid_Pace(n1+17,i,"") + '", "pace10":"-' + Valid_Pace(n1+10,i,"") + '", "pace3":"-' + Valid_Pace(n1+3,i,"") + '", "km":"' + (i+1) + '"},\n'
+ }
+
+f4 = "[\n" + f4.slice(0,f4.length-2) + "\n]" ;
+
+gg = JSON.parse(f4);
+
+gr3 = {  width:720,  height:111,  type:"clean", 
+cols:[
+        {
+          view:"chart",
+          type:"line",
+          padding:{left:25,bottom: 17  },
+          preset:"plot",
+          xAxis:{
+            template:"'#km#"
+          },
+          yAxis:{start:-7, step:1, end:-3,template: function(obj) {return Math.abs(obj);}},
+  legend:{layout:"x", height:-10, align:"center", valign:"middle",
+    values:[
+      {text:"-14", toggle:true,markerType: "item"},
+      {text:"-7", toggle:true,markerType: "item"},
+      {text:d[0].studentTasksInfo.diaryTasks[n1+3].date+"  pace/km", toggle:true,markerType: "item"}
+    ]
+  }	,	  
+  scheme:{ $group: { by:"km",  map:{
+        pace17:["pace17","any"],
+        pace10:["pace10","any"],
+        pace3:["pace3","any"]
+      }
+    }
+  },  series:[
+    {  type:"line",  value:"#pace17#", tooltip:{css:"tpyellow",template:function(obj) {return To_Pace(obj.pace17);}}, item:{radius:3,borderColor: "#e9df40"}, line:{color:"#e9df40",width:2} },
+    {  type:"line",  value:"#pace10#", tooltip:{css:"tpblue",template:function(obj) {return To_Pace(obj.pace10);}}, item:{radius:3,borderColor: "#00ccff"}, line:{color:"#00ccff",width:2} },
+    {  type:"line",  value:"#pace3#", tooltip:{css:"tpred", template:function(obj) {return To_Pace(obj.pace3);}}, item:{radius:3,borderColor: "#EC3774"}, line:{color:"#EC3774",width:2} }
+  ],		  
+          data: gg
+        }
+
+]
+};
+
+f5="" ;
+
+for(var i = 0; i < e5 ; i++){
+  f5 = f5 + '{ "pace18":"-' + Valid_Pace(n1+18,i,"") + '", "pace11":"-' + Valid_Pace(n1+11,i,"") + '", "pace4":"-' + Valid_Pace(n1+4,i,"") + '", "km":"' + (i+1) + '"},\n'
+ }
+
+f5 = "[\n" + f5.slice(0,f5.length-2) + "\n]" ;
+
+
+gg = JSON.parse(f5);
+
+gr4 = {  width:720,  height:111,  type:"clean", 
+cols:[
+        {
+          view:"chart",
+          type:"line",
+          padding:{left:25,bottom: 17  },
+          preset:"plot",
+          xAxis:{
+            template:"'#km#"
+          },
+          yAxis:{start:-7, step:1, end:-3,template: function(obj) {return Math.abs(obj);}},
+  legend:{layout:"x", height:-10, align:"center", valign:"middle",
+    values:[
+      {text:"-14", toggle:true,markerType: "item"},
+      {text:"-7", toggle:true,markerType: "item"},
+      {text:d[0].studentTasksInfo.diaryTasks[n1+4].date+"  pace/km", toggle:true,markerType: "item"}
+    ]
+  }	,	  
+  scheme:{ $group: { by:"km",  map:{
+        pace18:["pace18","any"],
+        pace11:["pace11","any"],
+        pace4:["pace4","any"]
+      }
+    }
+  },  series:[
+    {  type:"line",  value:"#pace18#", tooltip:{css:"tpyellow",template:function(obj) {return To_Pace(obj.pace18);}}, item:{radius:3,borderColor: "#e9df40"}, line:{color:"#e9df40",width:2} },
+    {  type:"line",  value:"#pace11#", tooltip:{css:"tpblue",template:function(obj) {return To_Pace(obj.pace11);}}, item:{radius:3,borderColor: "#00ccff"}, line:{color:"#00ccff",width:2} },
+    {  type:"line",  value:"#pace4#", tooltip:{css:"tpred", template:function(obj) {return To_Pace(obj.pace4);}}, item:{radius:3,borderColor: "#EC3774"}, line:{color:"#EC3774",width:2} }
+  ],		  
+          data: gg
+        }
+
+]
+};
+
+
+
+f6 = "" ;
+
+for(var i = 0; i < e6 ; i++){
+  f6 = f6 + '{ "pace19":"-' + Valid_Pace(n1+19,i,"") + '", "pace12":"-' + Valid_Pace(n1+12,i,"") + '", "pace5":"-' + Valid_Pace(n1+5,i,"") + '", "km":"' + (i+1) + '"},\n'
+ }
+
+f6 = "[\n" + f6.slice(0,f6.length-2) + "\n]" ;
+
+gg = JSON.parse(f6);
+
+gr5 = {  width:720,  height:111,  type:"clean", 
+cols:[
+        {
+          view:"chart",
+          type:"line",
+          padding:{left:25,bottom: 17  },
+          preset:"plot",
+          xAxis:{
+            template:"'#km#"
+          },
+          yAxis:{start:-7, step:1, end:-3,template: function(obj) {return Math.abs(obj);}},
+  legend:{layout:"x", height:-10, align:"center", valign:"middle",
+    values:[
+      {text:"-14", toggle:true,markerType: "item"},
+      {text:"-7", toggle:true,markerType: "item"},
+      {text:d[0].studentTasksInfo.diaryTasks[n1+5].date+"  pace/km", toggle:true,markerType: "item"}
+    ]
+  }	,	  
+  scheme:{ $group: { by:"km",  map:{
+        pace19:["pace19","any"],
+        pace12:["pace12","any"],
+        pace5:["pace5","any"]
+      }
+    }
+  },  series:[
+    {  type:"line",  value:"#pace19#", tooltip:{css:"tpyellow",template:function(obj) {return To_Pace(obj.pace19);}}, item:{radius:3,borderColor: "#e9df40"}, line:{color:"#e9df40",width:2} },
+    {  type:"line",  value:"#pace12#", tooltip:{css:"tpblue",template:function(obj) {return To_Pace(obj.pace12);}}, item:{radius:3,borderColor: "#00ccff"}, line:{color:"#00ccff",width:2} },
+    {  type:"line",  value:"#pace5#", tooltip:{css:"tpred", template:function(obj) {return To_Pace(obj.pace5);}}, item:{radius:3,borderColor: "#EC3774"}, line:{color:"#EC3774",width:2} }
+  ],		  
+          data: gg
+        }
+
+]
+};
+
+
+f7 = "" ;
+
+for(var i = 0; i < e7 ; i++){
+  f7 = f7 + '{ "pace20":"-' + Valid_Pace(n1+20,i,"") + '", "pace13":"-' + Valid_Pace(n1+13,i,"") + '", "pace6":"-' + Valid_Pace(n1+6,i,"") + '", "km":"' + (i+1) + '"},\n'
+ }
+
+f7 = "[\n" + f7.slice(0,f7.length-2) + "\n]" ;
+
+gg = JSON.parse(f7);
+
+gr6 = {  width:720,  height:111,  type:"clean", 
+cols:[
+        {
+          view:"chart",
+          type:"line",
+          padding:{left:25,bottom: 17  },
+          preset:"plot",
+          xAxis:{
+            template:"'#km#"
+          },
+          yAxis:{start:-7, step:1, end:-3,template: function(obj) {return Math.abs(obj);}},
+  legend:{layout:"x", height:-10, align:"center", valign:"middle",
+    values:[
+      {text:"-14", toggle:true,markerType: "item"},
+      {text:"-7", toggle:true,markerType: "item"},
+      {text:d[0].studentTasksInfo.diaryTasks[n1+6].date+"  pace/km", toggle:true,markerType: "item"}
+    ]
+  }	,	  
+  scheme:{ $group: { by:"km",  map:{
+        pace20:["pace20","any"],
+        pace13:["pace13","any"],
+        pace6:["pace6","any"]
+      }
+    }
+  },  series:[
+    {  type:"line",  value:"#pace20#", tooltip:{css:"tpyellow",template:function(obj) {return To_Pace(obj.pace20);}}, item:{radius:3,borderColor: "#e9df40"}, line:{color:"#e9df40",width:2} },
+    {  type:"line",  value:"#pace13#", tooltip:{css:"tpblue",template:function(obj) {return To_Pace(obj.pace13);}}, item:{radius:3,borderColor: "#00ccff"}, line:{color:"#00ccff",width:2} },
+    {  type:"line",  value:"#pace6#", tooltip:{css:"tpred", template:function(obj) {return To_Pace(obj.pace6);}}, item:{radius:3,borderColor: "#EC3774"}, line:{color:"#EC3774",width:2} }
+  ],		  
+          data: gg
+        }
+
+]
+};
+
+
+webix.i18n.setLocale("ru-RU");
+
+let date1 = new Date();
+let date2 = new Date();
+
+date2.setDate(date2.getDate() - 20);
+
+spacer = {  
+view: "label", 
+id: "spa1", 
+label: "",  
+width: 220  
+//height: 50, 
+};
+
+calend1 = {
+   view:"datepicker",
+      id: "cal1",
+      inputWidth:169,
+//      label: "<span style='color:#EC3774'><b>&nbsp;&nbsp;------o------</b></span>",
+//      label: "",
+//      labelWidth:82,  
+
+  suggest:{
+       view:"suggest", type:"calendar", body:{
+          view:"calendar",
+          height:260,
+          icons:true,
+		      blockDates:function(date){
+      if(bldate.includes(date.toLocaleDateString('en-CA')))
+        return true;
+  	},
+          maxDate: date1,
+          minDate: date2
+    }}  
+};
+
+//$$('calend1').setValue(new Date());
+
+calend2 = {
+   view:"datepicker",
+      id: "cal2",
+      inputWidth:169,
+//      label: "<span style='color:#00ccff'><b>&nbsp;&nbsp;------o------</b></span>",
+//      label: "",
+//      labelWidth:82,  
+  suggest:{
+       view:"suggest", type:"calendar", body:{
+          view:"calendar",
+          height:260,
+          icons:true,
+		      blockDates:function(date){
+      if(bldate.includes(date.toLocaleDateString('en-CA')))
+        return true;
+  	},
+          maxDate: date1,
+          minDate: date2
+    }}  
+};
+
+calend3 = {
+   view:"datepicker",
+      id: "cal3",
+      inputWidth:169,
+//      label: "<span style='color:#e9df40'><b>&nbsp;&nbsp;------o------</b></span>",
+//      label: "",
+//      labelWidth:82,  
+  suggest:{
+       view:"suggest", type:"calendar", body:{
+          view:"calendar",
+          height:260,
+          icons:true,
+		      blockDates:function(date){
+      if(bldate.includes(date.toLocaleDateString('en-CA')))
+        return true;
+  	},
+          maxDate: date1,
+          minDate: date2
+    }}  
+};
+
+
+var raw_data = [
+  { param: "Продажи", s1: 100, s2: 120, s3: 150 },
+  { param: "Аренда",  s1: 50,  s2: 40,  s3: 60 },
+  { param: "Налоги",  s1: 10,  s2: 12,  s3: 15 }
+];
+
+dtable = {
+  view: "datatable",
+  id:"ddtable",  
+  css: "webix_data_border", // Добавляет границы между всеми столбцами  
+  headerRowHeight: 25,
+  rowHeight: 25,
+  columns: [
+    // Первый столбец всегда закреплен за названиями параметров
+//    { id: "param", header: "Параметр", width: 250, css: "webix_header_border webix_data_border" },
+    { id: "param", header: "Параметр", width: 222 },
+    // Остальные столбцы — это ваши серии
+    { id: "s1", header: "<span style='color:#EC3774'><b>&nbsp;&nbsp;------o------</b></span>", width: 166 },
+    { id: "s2", header: "<span style='color:#00ccff'><b>&nbsp;&nbsp;------o------</b></span>", width: 168 },
+    { id: "s3", header: "<span style='color:#e9df40'><b>&nbsp;&nbsp;------o------</b></span>", width: 154 }
+  ],
+//  autoheight: true,
+  height: 200,
+  autowidth: true,
+  data: raw_data
+};
+
+
+
+let distn = ["200","1000","5000","10000","21097"];
+
+
+function updateBarData(ind1, ind2, ind3) {
+    var f1 = [];
+    
+    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
+    for(var i = 0; i < 5; i++){
+        var item = { dist: distn[i] };
+        item.sales3 = (ind3 > 0) ? eval('Valid_M' + distn[i] + '(ind3, "");') * -1 : "";
+        item.sales2 = (ind2 > 0) ? eval('Valid_M' + distn[i] + '(ind2, "");') * -1 : "";
+        item.sales  = (ind1 > 0) ? eval('Valid_M' + distn[i] + '(ind1, "");') * -1 : "";
+        f1.push(item);
+    }
+
+    var chart = $$("ddcol"); // используйте ID, который вы задали в конфиге
+    if (chart) {
+        // 1. Очищаем старые данные
+        chart.clearAll();
+        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
+        chart.parse(f1);
+    }
+
+//console.log(f1);
+
+}
+
+var multiple_dataset = [
+	{ sales:"-3.5", sales2:"", sales3:"", dist:"200" },
+	{ sales:"-4.0", sales2:"", sales3:"", dist:"1000" },
+	{ sales:"-4.5", sales2:"", sales3:"", dist:"5000" },
+	{ sales:"-5.0", sales2:"", sales3:"", dist:"10000" },
+	{ sales:"-5.2", sales2:"", sales3:"", dist:"21097" }
+];
+
+
+dcol = {
+  view:"chart",
+  id:"ddcol",
+  width:720,
+  height:194,
+  type:"bar",
+  barWidth:60,
+  radius:4,
+  padding:{ top: 10 }, // Обязательно даем место сверху под легенду
+  
+  legend: {
+    layout: "x",
+    align: "center",
+    valign: "top",
+    marker: {
+      type: "square",
+      width: 12,
+      height: 12,
+      radius: 2
+    },
+    // ВРУЧНУЮ связываем маркеры с сериями
+    values: [
+//      { text: "Серия 1", color: "#EC3774", toggle: "s1" },
+//      { text: "Серия 2", color: "#00ccff", toggle: "s2" },
+//      { text: "fastest", color: "#e9df40", toggle: "s3" }
+
+      { text: "", color: "#EC3774", toggle: "s1" },
+      { text: "", color: "#00ccff", toggle: "s2" },
+      { text: "&nbsp;&nbsp;fastest pace", color: "#e9df40", toggle: "s3" }
+    ]
+  },
+
+  series:[
+    {
+      id: "s1", // Добавляем ID для связи с легендой
+      value: "#sales#",
+      color: "#EC3774",
+      label: function(obj){ return To_Pace(obj.sales * -1); }
+    },
+    {
+      id: "s2",
+      value: "#sales2#",
+      color: "#00ccff",
+      label: function(obj){ return To_Pace(obj.sales2 * -1); }
+    },
+    {
+      id: "s3",
+      value: "#sales3#",
+      color: "#e9df40",
+      label: function(obj){ return To_Pace(obj.sales3 * -1); }
+    }
+  ],
+  
+  // Остальные настройки без изменений
+  gradient:"falling",
+  xAxis:{ template:"'#dist#" },
+  yAxis:{
+    start:-7, step:1, end:-3,
+    template: function(obj) {return Math.abs(obj);}
+  },  
+  data:multiple_dataset
+};
+
+
+webix.ui(
+{ "id":"ini",
+"rows":[ { view:"resizer" },
+{ "id":"main" ,
+  "cols": [
+       { "id":"form0%",
+       "rows":[ {"cols": [spacer,calend1,calend2,calend3]} ,
+				dtable,
+                gr0, { view:"resizer" },
+                gr1, { view:"resizer" },
+                dcol
+ 	          ]  
+       },  
+	   { view:"resizer" },
+       { "id":"form2%" , 
+        "rows":[
+                 cmnt1 
+			   ]
+		}  
+        ]},
+{ view:"resizer" }
+]}
+).show();  
+
+
+$$('cal1').setValue(new Date());
+//new Date(new Date() - 7 * 24 * 60 * 60 * 1000);
+//$$('cal1').setValue(new Date(new Date() - 9 * 24 * 60 * 60 * 1000));
+$$('cal2').setValue(null);
+$$('cal3').setValue(null);
+
+//if ( $$('cal1').getValue() !== null ) {
+//for(var i = n1; i < n2 ; i++){
+//console.log(i + '\n');
+// if ( $$('cal1').getValue().toLocaleDateString('en-CA') == d[0].studentTasksInfo.diaryTasks[i].date ) {
+//  ind1 = i;
+//console.log(i + '===================\n');
+
+//  }
+// }
+//}
+
+//$$('cal1').setValue(null);
+//$$('cal1').getValue().toLocaleDateString('en-CA');
+
+setind();
+
+
+updateChartData(ind1, ind2, ind3);
+updateChartData2(ind1, ind2, ind3);
+updateBarData(ind1, ind2, ind3);
+
+/////////////////////////////////////////////////
+
+/////////////////////////////////////////////////
+
+reda = "<span style='color:#EC3774'>" ;
+
+tbl = "" ;
+//if ( ind1 > 0 ) {
+//tbl = tbl + '{ "День":"' + formatDate(d[0].studentTasksInfo.diaryTasks[ind1].date) + '","Тип":"' + Valid_Ttype(ind1,"") +
+//      '","Сложность":"' + d[0].studentTasksInfo.diaryTasks[ind1].reportParameters.difficulty + '","Погода":"' + d[0].studentTasksInfo.diaryTasks[ind1].tracks[0].json.weather.temp_c +
+//      ' C","Обьем":"' +  d[0].studentTasksInfo.diaryTasks[ind1].kmCompleted + ' km","макс.пульс":"' + Valid_MaxHeart(ind1,"") +
+//	  '","GS":"' + Valid_gs(ind1,"") + 
+//	  '"},\n'
+
+//tbl = tbl + '{ "den":"' + reda + formatDate(d[0].studentTasksInfo.diaryTasks[ind1].date) + '</span>","type":"' + Valid_Ttype(ind1,"") +
+//      '","dific":"' + Valid_trubl(ind1,"") + '","weather":"' + d[0].studentTasksInfo.diaryTasks[ind1].tracks[0].json.weather.temp_c +
+//      ' C","km":"' +  d[0].studentTasksInfo.diaryTasks[ind1].kmCompleted + ' km","mhrt":"' + Valid_MaxHeart(ind1,"") +
+//	  '","dgs":"' + Valid_gs(ind1,"") + 
+//	  '"},\n'
+ tbl = tbl + '{ "param":"тип тренировки","s1":"' + Valid_Ttype(ind1,"") + '","s2":"' + Valid_Ttype(ind2,"") + '","s3":"' + Valid_Ttype(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"самооценка тренировки","s1":"' + Valid_trubl(ind1,"") + '","s2":"' + Valid_trubl(ind2,"") + '","s3":"' + Valid_trubl(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"погода, С","s1":"' + Valid_C(ind1,"") + '","s2":"' + Valid_C(ind2,"") + '","s3":"' + Valid_C(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"общая дистанция, км","s1":"' + Valid_km(ind1,"") + '","s2":"' + Valid_km(ind2,"") + '","s3":"' + Valid_km(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"максимальный пульс","s1":"' + Valid_MaxHeart(ind1,"") + '","s2":"' + Valid_MaxHeart(ind2,"") + '","s3":"' + Valid_MaxHeart(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"параметр GS","s1":"' + Valid_gs(ind1,"") + '","s2":"' + Valid_gs(ind2,"") + '","s3":"' + Valid_gs(ind3,"") + '"},\n';
+
+//}
+
+tbl = "[\n" + tbl.slice(0,tbl.length-2) + "\n]" ;	  
+
+
+//console.log(tbl);
+
+
+function updateChartData(ind1, ind2, ind3) {
+    var f1 = [];
+    
+    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
+    for(var i = 0; i < 24; i++){
+        var item = { m: slots[i] };
+        item.pace14 = (ind3 > 0) ? Valid_Slot(ind3, i, "") : null;
+        item.pace7  = (ind2 > 0) ? Valid_Slot(ind2, i, "") : null;
+        item.pace0  = (ind1 > 0) ? Valid_Slot(ind1, i, "") : null;
+        f1.push(item);
+    }
+
+    var chart = $$("gslot"); // используйте ID, который вы задали в конфиге
+    if (chart) {
+        // 1. Очищаем старые данные
+        chart.clearAll();
+        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
+        chart.parse(f1);
+    }
+
+
+
+//console.log(f1);
+
+}
+
+function updateChartData2(ind1, ind2, ind3) {
+    var ff2 = [];
+
+ ee = Math.max(Valid_km(ind1,0),Valid_km(ind2,0),Valid_km(ind3,0));
+   
+    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
+    for(var i = 0; i < ee; i++){
+        var item = { km: (i+1) };
+        item.pace15 = (ind3 > 0) ? Valid_Pace(ind3, i, "") * -1 : null;
+        item.pace8  = (ind2 > 0) ? Valid_Pace(ind2, i, "") * -1 : null;
+        item.pace1  = (ind1 > 0) ? Valid_Pace(ind1, i, "") * -1 : null;
+        ff2.push(item);
+    }
+
+//console.log(ff2);
+
+    var chart = $$("gpace"); // используйте ID, который вы задали в конфиге
+    if (chart) {
+        // 1. Очищаем старые данные
+        chart.clearAll();
+        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
+        chart.parse(ff2);
+    }
+
+//console.log(f2);
+}
+
+function updateTable1(ind1, ind2, ind3) {
+
+ $$("ddtable").clearAll();
+
+tbl = "" ;
+//if ( ind1 > 0 ) {
+//tbl = tbl + '{ "День":"' + formatDate(d[0].studentTasksInfo.diaryTasks[ind1].date) + '","Тип":"' + Valid_Ttype(ind1,"") +
+//      '","Сложность":"' + d[0].studentTasksInfo.diaryTasks[ind1].reportParameters.difficulty + '","Погода":"' + d[0].studentTasksInfo.diaryTasks[ind1].tracks[0].json.weather.temp_c +
+//      ' C","Обьем":"' +  d[0].studentTasksInfo.diaryTasks[ind1].kmCompleted + ' km","макс.пульс":"' + Valid_MaxHeart(ind1,"") +
+//	  '","GS":"' + Valid_gs(ind1,"") + 
+//	  '"},\n'
+
+//tbl = tbl + '{ "den":"' + reda + formatDate(d[0].studentTasksInfo.diaryTasks[ind1].date) + '","type":"' + Valid_Ttype(ind1,"") +
+//      '","dific":"' + Valid_trubl(ind1,"") + '","weather":"' + d[0].studentTasksInfo.diaryTasks[ind1].tracks[0].json.weather.temp_c +
+//      ' C","km":"' +  d[0].studentTasksInfo.diaryTasks[ind1].kmCompleted + ' km","mhrt":"' + Valid_MaxHeart(ind1,"") +
+//	  '","dgs":"' + Valid_gs(ind1,"") + 
+//	  '"},\n'
+
+ tbl = tbl + '{ "param":"тип тренировки","s1":"' + Valid_Ttype(ind1,"") + '","s2":"' + Valid_Ttype(ind2,"") + '","s3":"' + Valid_Ttype(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"самооценка тренировки","s1":"' + Valid_trubl(ind1,"") + '","s2":"' + Valid_trubl(ind2,"") + '","s3":"' + Valid_trubl(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"погода, С","s1":"' + Valid_C(ind1,"") + '","s2":"' + Valid_C(ind2,"") + '","s3":"' + Valid_C(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"общая дистанция, км","s1":"' + Valid_km(ind1,"") + '","s2":"' + Valid_km(ind2,"") + '","s3":"' + Valid_km(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"максимальный пульс","s1":"' + Valid_MaxHeart(ind1,"") + '","s2":"' + Valid_MaxHeart(ind2,"") + '","s3":"' + Valid_MaxHeart(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"параметр GS","s1":"' + Valid_gs(ind1,"") + '","s2":"' + Valid_gs(ind2,"") + '","s3":"' + Valid_gs(ind3,"") + '"},\n';
+
+//}
+
+tbl = "[\n" + tbl.slice(0,tbl.length-2) + "\n]" ;	  
+
+
+ $$("ddtable").parse(tbl);
+
+}
+
+
+  $$("ddtable").clearAll();
+  $$("ddtable").parse(tbl);
+
+
+
+
+  $$("cal1").attachEvent("onChange", function(a,b) {
+//webix.message(`Selected date is ${format(a[0])}. Source: ${b}`)
+
+if ( $$('cal1').getValue() == null ) {
+
+ind1 = 0;
+
+updateTable1(ind1, ind2, ind3);
+updateChartData(ind1, ind2, ind3);
+updateChartData2(ind1, ind2, ind3);
+updateBarData(ind1, ind2, ind3);
+
+return;
+}
+ 
+if ( $$('cal1').getValue() !== null ) {
+for(var i = n1; i < n2 ; i++){
+ if ( $$('cal1').getValue().toLocaleDateString('en-CA') == d[0].studentTasksInfo.diaryTasks[i].date ) {
+  ind1 = i;
+  }
+ }
+
+updateTable1(ind1, ind2, ind3);
+updateChartData(ind1, ind2, ind3);
+updateChartData2(ind1, ind2, ind3);
+updateBarData(ind1, ind2, ind3);
+
+} else {
+ind1 = 0;
+}
+
+
+});
+
+
+  $$("cal2").attachEvent("onChange", function(a,b) {
+
+if ( $$('cal2').getValue() == null ) {
+
+ind2 = 0;
+
+updateTable1(ind1, ind2, ind3);
+updateChartData(ind1, ind2, ind3);
+updateChartData2(ind1, ind2, ind3);
+updateBarData(ind1, ind2, ind3);
+
+return;
+}
+ 
+if ( $$('cal2').getValue() !== null ) {
+for(var i = n1; i < n2 ; i++){
+ if ( $$('cal2').getValue().toLocaleDateString('en-CA') == d[0].studentTasksInfo.diaryTasks[i].date ) {
+  ind2 = i;
+  }
+ }
+
+updateTable1(ind1, ind2, ind3);
+updateChartData(ind1, ind2, ind3);
+updateChartData2(ind1, ind2, ind3);
+updateBarData(ind1, ind2, ind3);
+
+} else {
+ind2 = 0;
+}
+
+
+});
+  
+
+  $$("cal3").attachEvent("onChange", function(a,b) {
+
+if ( $$('cal3').getValue() == null ) {
+
+ind3 = 0;
+
+updateTable1(ind1, ind2, ind3);
+updateChartData(ind1, ind2, ind3);
+updateChartData2(ind1, ind2, ind3);
+updateBarData(ind1, ind2, ind3);
+
+return;
+
+}
+
+ 
+if ( $$('cal3').getValue() !== null ) {
+for(var i = n1; i < n2 ; i++){
+ if ( $$('cal3').getValue().toLocaleDateString('en-CA') == d[0].studentTasksInfo.diaryTasks[i].date ) {
+  ind3 = i;
+  }
+ }
+
+updateTable1(ind1, ind2, ind3);
+updateChartData(ind1, ind2, ind3);
+updateChartData2(ind1, ind2, ind3);
+updateBarData(ind1, ind2, ind3);
+
+
+} else {
+ind3 = 0;
+}
+
+
+});
+  
+
+
+// День -- d[0].studentTasksInfo.diaryTasks[i].date
+// Тип -- d[0].studentTasksInfo.diaryTasks[i].type
+// Сложность -- d[0].studentTasksInfo.diaryTasks[i].reportParameters.difficulty
+// Погода -- d[0].studentTasksInfo.diaryTasks[i].tracks[0].json.weather.temp_c
+// Обьем -- d[0].studentTasksInfo.diaryTasks[i].kmCompleted
+// макс.пульс -- Valid_MaxHeart()
+// GS -- Valid_gs()
+
+
+
+
+                }
+
+ //               fr.readAsText(this.files[0]);
+
+});
+
+
+
+
+
+</script>
+</body>
+
+</html>
