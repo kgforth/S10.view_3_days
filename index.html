@@ -208,9 +208,7 @@ cmnt1= { id: "cmnt1",
 
 
 function Valid_km(r,t) {
- 
- try {
-    
+ try {   
 	if (d[0].studentTasksInfo.diaryTasks[r].kmCompleted == null) {
 	return t;
 	}
@@ -224,12 +222,33 @@ else
   }
 }
 
+function Valid_kmm(r,t) {
+	var tt = "";
+ try {   
+	if (d[0].studentTasksInfo.diaryTasks[r].kmCompleted == null) {
+	return t;
+	}
+else
+  {	
+tt = tt + d[0].studentTasksInfo.diaryTasks[r].kmCompleted;
+tt = tt + " ";
+tt = tt + d[0].studentTasksInfo.diaryTasks[r].tracks.length;
+	  return tt;
+  }
+  
+  } catch {
+    return t;
+  }
+}
+
+		
+		
 function Valid_C(r,t) {
   var tt = "" ;
 
 	try {
   tt = tt + d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.weather.temp_c	;
-  tt = tt + " ";
+  tt = tt + "° ";
   tt = tt + d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.weather.condition.text	;	  
     return tt;
   } catch {
@@ -1365,7 +1384,7 @@ tbl = "" ;
  tbl = tbl + '{ "param":"тип тренировки","s1":"' + Valid_Ttype(ind1,"") + '","s2":"' + Valid_Ttype(ind2,"") + '","s3":"' + Valid_Ttype(ind3,"") + '"},\n';
  tbl = tbl + '{ "param":"самооценка тренировки","s1":"' + Valid_trubl(ind1,"") + '","s2":"' + Valid_trubl(ind2,"") + '","s3":"' + Valid_trubl(ind3,"") + '"},\n';
  tbl = tbl + '{ "param":"погода, С","s1":"' + Valid_C(ind1,"") + '","s2":"' + Valid_C(ind2,"") + '","s3":"' + Valid_C(ind3,"") + '"},\n';
- tbl = tbl + '{ "param":"общая дистанция, км","s1":"' + Valid_km(ind1,"") + '","s2":"' + Valid_km(ind2,"") + '","s3":"' + Valid_km(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"общая дистанция, км","s1":"' + Valid_kmm(ind1,"") + '","s2":"' + Valid_kmm(ind2,"") + '","s3":"' + Valid_kmm(ind3,"") + '"},\n';
  tbl = tbl + '{ "param":"максимальный пульс","s1":"' + Valid_MaxHeart(ind1,"") + '","s2":"' + Valid_MaxHeart(ind2,"") + '","s3":"' + Valid_MaxHeart(ind3,"") + '"},\n';
  tbl = tbl + '{ "param":"параметр GS","s1":"' + Valid_gs(ind1,"") + '","s2":"' + Valid_gs(ind2,"") + '","s3":"' + Valid_gs(ind3,"") + '"},\n';
 
