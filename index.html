@@ -225,8 +225,13 @@ else
 }
 
 function Valid_C(r,t) {
-  try {
-    return d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.weather.temp_c;
+  var tt = "" ;
+
+	try {
+  tt = tt + d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.weather.temp_c	;
+  tt = tt + " C, ";
+  tt = tt + d[0].studentTasksInfo.diaryTasks[r].tracks[0].json.weather.condition.text	;	  
+    return tt;
   } catch {
     return t;
   }
