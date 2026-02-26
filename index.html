@@ -311,7 +311,7 @@ for(var i = n1; i < n2 ; i++){
   }
  }
 } else {
-ind1 = 0;
+ind1 = "";
 }
 
 if ( $$('cal2').getValue() !== null ) {
@@ -321,7 +321,7 @@ for(var i = n1; i < n2 ; i++){
   }
  }
 } else {
-ind2 = 0;
+ind2 = "";
 }
 
 
@@ -332,7 +332,7 @@ for(var i = n1; i < n2 ; i++){
   }
  }
 } else {
-ind3 = 0;
+ind3 = "";
 }
 
 
@@ -1219,9 +1219,9 @@ function updateBarData(ind1, ind2, ind3) {
     // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
     for(var i = 0; i < 5; i++){
         var item = { dist: distn[i] };
-        item.sales3 = (ind3 > 0) ? eval('Valid_M' + distn[i] + '(ind3, "");') * -1 : "";
-        item.sales2 = (ind2 > 0) ? eval('Valid_M' + distn[i] + '(ind2, "");') * -1 : "";
-        item.sales  = (ind1 > 0) ? eval('Valid_M' + distn[i] + '(ind1, "");') * -1 : "";
+        item.sales3 = (ind3 >= 0) ? eval('Valid_M' + distn[i] + '(ind3, "");') * -1 : "";
+        item.sales2 = (ind2 >= 0) ? eval('Valid_M' + distn[i] + '(ind2, "");') * -1 : "";
+        item.sales  = (ind1 >= 0) ? eval('Valid_M' + distn[i] + '(ind1, "");') * -1 : "";
         f1.push(item);
     }
 
@@ -1402,9 +1402,9 @@ function updateChartData(ind1, ind2, ind3) {
     // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
     for(var i = 0; i < 24; i++){
         var item = { m: slots[i] };
-        item.pace14 = (ind3 > 0) ? Valid_Slot(ind3, i, "") : null;
-        item.pace7  = (ind2 > 0) ? Valid_Slot(ind2, i, "") : null;
-        item.pace0  = (ind1 > 0) ? Valid_Slot(ind1, i, "") : null;
+        item.pace14 = (ind3 >= 0) ? Valid_Slot(ind3, i, "") : null;
+        item.pace7  = (ind2 >= 0) ? Valid_Slot(ind2, i, "") : null;
+        item.pace0  = (ind1 >= 0) ? Valid_Slot(ind1, i, "") : null;
         f1.push(item);
     }
 
@@ -1430,9 +1430,9 @@ function updateChartData2(ind1, ind2, ind3) {
     // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
     for(var i = 0; i < ee; i++){
         var item = { km: (i+1) };
-        item.pace15 = (ind3 > 0) ? Valid_Pace(ind3, i, "") * -1 : null;
-        item.pace8  = (ind2 > 0) ? Valid_Pace(ind2, i, "") * -1 : null;
-        item.pace1  = (ind1 > 0) ? Valid_Pace(ind1, i, "") * -1 : null;
+        item.pace15 = (ind3 >= 0) ? Valid_Pace(ind3, i, "") * -1 : null;
+        item.pace8  = (ind2 >= 0) ? Valid_Pace(ind2, i, "") * -1 : null;
+        item.pace1  = (ind1 >= 0) ? Valid_Pace(ind1, i, "") * -1 : null;
         ff2.push(item);
     }
 
@@ -1495,7 +1495,7 @@ tbl = "[\n" + tbl.slice(0,tbl.length-2) + "\n]" ;
 
 if ( $$('cal1').getValue() == null ) {
 
-ind1 = 0;
+ind1 = "";
 
 updateTable1(ind1, ind2, ind3);
 updateChartData(ind1, ind2, ind3);
@@ -1518,7 +1518,7 @@ updateChartData2(ind1, ind2, ind3);
 updateBarData(ind1, ind2, ind3);
 
 } else {
-ind1 = 0;
+ind1 = "";
 }
 
 
@@ -1529,7 +1529,7 @@ ind1 = 0;
 
 if ( $$('cal2').getValue() == null ) {
 
-ind2 = 0;
+ind2 = "";
 
 updateTable1(ind1, ind2, ind3);
 updateChartData(ind1, ind2, ind3);
@@ -1552,7 +1552,7 @@ updateChartData2(ind1, ind2, ind3);
 updateBarData(ind1, ind2, ind3);
 
 } else {
-ind2 = 0;
+ind2 = "";
 }
 
 
@@ -1563,7 +1563,7 @@ ind2 = 0;
 
 if ( $$('cal3').getValue() == null ) {
 
-ind3 = 0;
+ind3 = "";
 
 updateTable1(ind1, ind2, ind3);
 updateChartData(ind1, ind2, ind3);
@@ -1589,7 +1589,7 @@ updateBarData(ind1, ind2, ind3);
 
 
 } else {
-ind3 = 0;
+ind3 = "";
 }
 
 
