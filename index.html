@@ -5,7 +5,6 @@
     <title>S10.view_3_days</title> 
 <link rel="stylesheet" type="text/css" href="webix.css">
 <script type="text/javascript" src="webix.js"></script>
-
 <style> .tpred { color: #EC3774; background: #fff; border: .4em solid; border-color: rgb(256,256,256); margin: 0 0 0 -.4em;}</style>
 <style> .tpblue { color: #00ccff; background: #fff; border: .4em solid; border-color: rgb(256,256,256); margin: 0 0 0 -.4em;}</style>
 <style> .tpyellow { color: #e9df40; background: #fff; border: .4em solid; border-color: rgb(256,256,256); margin: 0 0 0 -.4em;}</style>
@@ -13,10 +12,192 @@
 
 <body>
 
+<!-- Контейнер лоадера (центрированный) -->
+<div id="loader" style="
+    display: none; 
+    position: fixed; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    background: white; 
+    padding: 20px 40px; 
+    border-radius: 12px; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+    z-index: 10000; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    border: 1px solid #eee;
+">
+    <!-- Крутилка -->
+    <div style="
+        width: 30px; 
+        height: 30px; 
+        border: 4px solid #f3f3f3; 
+        border-top: 4px solid #3498db; 
+        border-radius: 50%; 
+        animation: spin 1s linear infinite; 
+        margin: 0 auto 15px;
+    "></div>
+    
+    <div style="color: #333; font-weight: 500; font-size: 16px;">
+        Загрузка данных...
+    </div>
+</div>
 
-    <pre id="output"></pre>
+<!-- Затемнение фона (опционально, чтобы акцентировать внимание) -->
+<div id="loader-overlay" style="
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(255,255,255,0.7); 
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+"></div>
+
+<style>
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
 
 <script type="text/javascript">
+
+
+//var oldUi = webix.ui;
+//webix.ui = function(config){
+//    if (config.id === "gpace" || (config.body && config.body.id === "gpace")) {
+//        console.trace("Объект gpace создается здесь:");
+//    }
+//    return oldUi.apply(this, arguments);
+//};
+
+
+var trashBtnId = "trash_btn";
+var searchId = "my_search";
+var listId = "my_suggest_list";
+var lastId = 0 ;
+
+webix.html.addStyle(`
+  .trash-active { background-color: #ff4747 !important; border-color: #b33030 !important; }
+  .webix_el_button button { transition: background-color 0.2s; height: 38px !important; }
+`);
+
+// ФУНКЦИЯ ИЗВЛЕЧЕНИЯ НОМЕРА
+function extractId() {
+  var text = $$(searchId).getValue();
+  if (!text) return webix.message("Поле пустое");
+
+  // Регулярка: ищет цифры между двумя символами #
+  var match = text.match(/#(\d+)#/);
+  
+  if (match && match[1]) {
+    var resultId = match[1]; // Это наша переменная с номером
+    webix.message({ type: "debug", text: "Извлечен ID: " + resultId });
+//    console.log("Найденный ID:", resultId);
+    
+	lastId = resultId;
+	
+    restartwebix();
+	
+    // Здесь можно вызвать дальнейшую логику с этим resultId
+  } else {
+    webix.message({ type: "error", text: "Формат #номер# не найден" });
+  }
+}
+
+// Слушатель для Ctrl (цвет кнопки)
+webix.event(window, "keydown", function(e){
+  if (e.ctrlKey && $$(trashBtnId)) webix.html.addCss($$(trashBtnId).getNode(), "trash-active");
+});
+webix.event(window, "keyup", function(e){
+  if (!e.ctrlKey && $$(trashBtnId)) webix.html.removeCss($$(trashBtnId).getNode(), "trash-active");
+});
+
+// --- ЛОГИКА ---
+
+function addItem() {
+  var search = $$(searchId);
+  var text = search.getValue();
+  if (!text || text.trim() === "") return;
+
+  var list = $$(listId);
+  var exists = list.find(obj => obj.value.toLowerCase() === text.toLowerCase(), true);
+
+  if (!exists) {
+    list.add({ value: text });
+    saveData();
+    webix.message("Добавлено: " + text);
+  } else {
+    webix.message("Уже в списке");
+  }
+}
+
+function removeItem() {
+  var text = $$(searchId).getValue();
+  var item = $$(listId).find(obj => obj.value == text, true);
+  if (item) {
+    webix.confirm("Удалить '" + text + "'?", r => {
+      if (r) {
+        $$(listId).remove(item.id);
+        $$(searchId).setValue("");
+        saveData();
+      }
+    });
+  } else {
+    webix.message("Элемент не найден");
+  }
+}
+
+function clearAllData() {
+  webix.confirm("Очистить всё?", r => {
+    if (r) {
+      webix.storage.local.remove("my_final_data");
+      $$(listId).clearAll();
+      $$(searchId).setValue("");
+    }
+  });
+}
+
+function saveData() {
+  webix.storage.local.put("my_final_data", $$(listId).serialize());
+}
+
+function loadData() {
+  var data = webix.storage.local.get("my_final_data");
+  if (data) $$(listId).parse(data);
+}
+		
+function addItemEx(inputValue) {
+  // 1. Проверяем, что входная строка не пустая
+  if (!inputValue || inputValue.trim() === "") return;
+
+  var list = $$(listId);
+  var text = inputValue.trim();
+
+  // 2. Проверяем на дубликаты в списке (без учета регистра)
+  var exists = list.find(obj => obj.value.toLowerCase() === text.toLowerCase(), true);
+
+  if (!exists) {
+    // 3. Добавляем в список
+    var newId = list.add({ value: text });
+    
+    // 4. Сохраняем обновленный список в localStorage
+    saveData();
+    
+    // 5. Опционально: сразу выбираем добавленное значение в поле поиска
+    $$(searchId).setValue(text);
+    
+    webix.message("Добавлено: " + text);
+    return newId; // возвращаем ID новой записи
+  } else {
+    // Если уже есть, просто выбираем этот элемент
+    $$(searchId).setValue(exists.value);
+    webix.message("Уже есть в списке");
+    return exists.id;
+  }
+}
+
 
 
 var a = "";
@@ -29,35 +210,214 @@ var m3 = '"trainingsRequests":';
 
 var f ;
 
+const loader = document.getElementById('loader');
+const overlay = document.getElementById('loader-overlay');
 
-// 1. Сразу сообщаем родителю, что мы загрузились
-if (window.opener) {
-    window.opener.postMessage("PARSER_READY", "*");
-} else {
-    alert("Запустите букмарклет на фоне раздела задач S10.run");
+function showLoader() {
+    loader.style.display = 'block';
+    overlay.style.display = 'block';
+//	console.log("ЛОАДЕР ДОЛЖЕН ПОКАЗАТЬСЯ");
 }
 
-//        document.getElementById('inputfile').addEventListener('change', function () {
-//                fff = this.files[0].name;
-//                let fr = new FileReader();
-//                fr.onload = function () {    a= fr.result;
+function hideLoader() {
+    loader.style.display = 'none';
+    overlay.style.display = 'none';
+}
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function restartwebix() {
+//webix.ui.each(function(view){
+//    if (view && view.destructor) view.destructor();
+//});
+
+// Сначала уничтожаем все окна (они живут отдельно от основного лейаута)
+//var views = webix.ui.views;
+//for (var id in views) {
+//    if (views[id] && views[id].destructor) {
+//        views[id].destructor();
+//    }
+//}
+
+// 1. Собираем все ID живых объектов в отдельный массив
+//var allIds = [];
+//for (var id in webix.ui.views) {
+//    allIds.push(id);
+//}
+
+// 2. Удаляем их по одному, проверяя существование
+//allIds.forEach(function(id){
+//    var view = webix.$$(id);
+//    if (view && view.destructor) {
+//        view.destructor();
+//    }
+//});
+
+
+    // 1. Получаем все корневые (верхние) элементы
+//    var roots = webix.ui.getViews(); 
+    
+    // 2. Уничтожаем их (вместе с ними умрут все вложенные элементы)
+//    for (var i = roots.length - 1; i >= 0; i--) {
+//        if (roots[i] && roots[i].destructor) {
+//            roots[i].destructor();
+//        }
+//    }
+
+    // 3. Добиваем "плавающие" окна и попапы, которые могли выжить
+//    var all = [];
+//    for (var id in webix.ui.views) all.push(id);
+    
+//    all.forEach(function(id) {
+//        if (webix.$$(id) && webix.$$(id).destructor) {
+//            webix.$$(id).destructor();
+//        }
+//    });
+
+//    console.log("Осталось объектов:", Object.keys(webix.ui.views).length);
+
+
+   // В Webix все вьюхи лежат в объекте webix.ui.views
+//    var views = webix.ui.views;
+//    var ids = [];
+
+    // Сначала просто собираем ID, чтобы не ломать цикл при удалении
+//    for (var id in views) {
+//        if (views.hasOwnProperty(id)) ids.push(id);
+//    }
+
+    // Удаляем объекты В ОБРАТНОМ ПОРЯДКЕ (от дочерних к родителям)
+//    for (var i = ids.length - 1; i >= 0; i--) {
+//        var v = webix.$$(ids[i]);
+//        if (v && v.destructor) {
+//            try {
+//                v.destructor();
+//            } catch(e) {
+//                console.warn("Не удалось удалить:", ids[i]);
+//            }
+//        }
+//    }
+    
+    // Проверка через встроенный счетчик Webix
+//    var count = 0;
+//    for (var id in webix.ui.views) count++;
+//    console.log("Осталось живых объектов:", count);
+
+
+//     1. Сначала явно удаляем график, если он еще жив
+//    if (webix.$$("gpace")) {
+        // Очищаем данные и серии перед деструктором
+//       webix.$$("gpace").clearAll(); 
+//        webix.$$("gpace").destructor();
+//  }
+
+    // 2. Добиваем выжившие серии (s20, s30 и т.д.)
+//    ["s10", "s20", "s30"].forEach(function(id) {
+//       if (webix.$$(id)) webix.$$(id).destructor();
+//    });
+
+    // 3. Тотальная зачистка ВСЕХ объектов по списку ID
+//    var ids = [];
+//    for (var id in webix.ui.views) ids.push(id);
+
+    // Удаляем жестко, игнорируя ошибки
+//   ids.forEach(function(id) {
+//        try {
+//            if (webix.$$(id)) webix.$$(id).destructor();
+//        } catch(e) {}
+//    });
+
+    // 4. ФИНАЛЬНЫЙ ХАК: если объекты всё еще в индексе, но не имеют DOM-узлов
+    // Просто очищаем глобальный реестр Webix (только для отчаянных случаев)
+ //   if (Object.keys(webix.ui.views).length > 0) {
+ //       webix.ui.views = {}; 
+//    }
+
+//    console.log("Чистка завершена. Объектов:", Object.keys(webix.ui.views).length);
+
+
+
+loadStudentById(lastId); 
+
+}
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+/**
+ * ФУНКЦИЯ ДЛЯ ВЫЗОВА ИЗ КОНСОЛИ ИЛИ ИНТЕРФЕЙСА ПАРСЕРА
+ * Запрашивает данные любого студента по ID
+ */
+function loadStudentById(studentId) {
+    const targetUrl = "https://s10.run/student?" + studentId + "&v2=1#/";
+    if (window.opener) {
+	    showLoader(); // ВКЛЮЧАЕМ ЛОАДЕР
+//        console.log("Запрос данных студента:", studentId);
+        window.opener.postMessage({ type: "FETCH_SPECIFIC_URL", url: targetUrl }, "*");
+    } else {
+        alert("Связь с родительским окном потеряна!");
+    }
+}
+
+
+// 1. Сразу сообщаем букмарклету, что мы открылись
+if (window.opener) {
+    window.opener.postMessage("PARSER_READY", "*");
+	showLoader(); // ВКЛЮЧАЕМ ЛОАДЕР
+} else {
+    document.body.innerHTML = "<h2 style='color:red ; text-align: center ;'>Запустите букмарклет на сайте S10.run!</h2>";
+}
+
+// Глобальная переменная для хранения последнего полученного HTML
+window.lastHtml = "";
+
+	// 2. Обработка входящих сообщений
 window.addEventListener("message", (event) => {
-    // Проверка, что пришло именно наше сообщение
-    if (event.data && event.data.type === "DATA_PAYLOAD") {
-        const receivedText = event.data.text;
-//        console.log("Успех! Получено символов:", receivedText.length);
-		a=receivedText;
+    const data = event.data;
 
+   // 1. Если букмарклет просит загрузить конкретный URL
+    if (data.type === "FETCH_SPECIFIC_URL" || data.type === "CHECK_URL") {
+        showLoader(); // ВКЛЮЧАЕМ ЗДЕСЬ, это универсальная точка входа
+//        console.log("Начинаем загрузку...");
+        
+        // Отвечаем букмарклету, чтобы он начал fetch, если это был CHECK_URL
+        if (data.type === "CHECK_URL") {
+            event.source.postMessage({ 
+                type: "FETCH_SPECIFIC_URL", 
+                url: data.url 
+            }, event.origin);
+        }
+    }
+	
+	// Шаг А: Проверка URL от букмарклета (первичная)
+//	
+//    if (data.type === "CHECK_URL") {
+//        const url = data.url;
+//        if (/s10\.run/.test(url)) {
+//            showLoader();
+//            // ВАЖНО: передаем объект с типом И URL, на который нужно сделать fetch
+//            event.source.postMessage({ type: "FETCH_SPECIFIC_URL", url: url }, event.origin);
+//        } else {
+//            document.body.innerHTML = "<h2 style='color:red;'>Ошибка домена</h2>";
+//        }
+//    }
+	
 
-// Пример использования:
-//const myPageContent = await getPageContent('https://s10.run/student?1000008935&v2=1#/');
-//const myPageContent = getPageContent('https://s10.run/student?1000008935&v2=1#/');
+    // Шаг Б: Получение данных (HTML)
+    if (data.type === "DATA_PAYLOAD") {
+	    hideLoader(); // ВЫКЛЮЧАЕМ ЛОАДЕР
+        window.lastHtml = data.text;
+//        console.log("Данные получены для URL:", data.url);
+//        console.log("Размер данных:", data.text.length, "символов");
+        
+//        console.log("====================================");
+//        console.log(window.lastHtml);
+//        console.log("====================================");
+        
+        // Здесь можно вызвать твою функцию парсинга, например:
+        // myParseFunction(data.text);
 
-//alert(a);
+		a=window.lastHtml;
 
+//		alert(a);
 
-				
  if ( a.includes(m1) && a.includes(m2)	) {	  
 				
                 b="["+ a.slice(a.indexOf(m1)+m1.length);
@@ -68,26 +428,149 @@ window.addEventListener("message", (event) => {
 	 
 } else {
 
-return alert("Запустите букмарклет на фоне раздела задач S10.run");
-
+//return alert("Запустите букмарклет на фоне раздела задач S10.run");
+ document.body.innerHTML = "<h2 style='color:red ; text-align: center ;'>Ошибка: Пожалуйста, перейдите на страницу студента S10.run в раздел Задачи</h2>";
+return ;
 }
 
 
 
                 d=JSON.parse(c);
+		
+		
+// =======================================================================================================================================================
+// =======================================================================================================================================================
+// =======================================================================================================================================================
+// =======================================================================================================================================================
 
-//document.getElementById('output').textContent = c.slice(0, 300) + "\n=================================================\n" + c.slice(-400);  
+if (lastId == 0) {
 
-//document.getElementById('student').textContent = 'student:'  + '        ' + Valid_Student();
-//document.getElementById('trainer').textContent = 'trainer:'  + '        ' + Valid_Trainer();
-//document.getElementById('ffile').textContent = 'file:'       + '        ' + fff;
-//document.getElementById('inputfile').setAttribute("type", "hidden");
+main_process();
 
-function formatDate(date) {
-    // Разделяет "2023-03-15" на ["2023", "03", "15"]
-    const parts = date.split('-');
-    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+} else {
+
+upd_process();
+
 }
+
+// =======================================================================================================================================================
+// =======================================================================================================================================================
+// =======================================================================================================================================================
+// =======================================================================================================================================================
+
+
+    }
+
+    // Шаг В: Обработка ошибок загрузки
+    if (data.type === "FETCH_ERROR") {
+	    hideLoader(); // ВЫКЛЮЧАЕМ ЛОАДЕР
+        console.error("Ошибка загрузки URL:", data.url, "Текст ошибки:", data.error);
+        document.body.innerHTML = "<h2 style='color:red ; text-align: center ;'>Не удалось загрузить данные</h2>";
+
+        //        alert("Не удалось загрузить данные: " + data.error);
+
+    }
+});
+
+
+function upd_process() {
+// --------------------------------------------------------------------------------------------------------------------------
+
+
+//alert("upd_process");
+
+n2 = d[0].studentTasksInfo.diaryTasks.length;
+n1 = n2-21;
+
+c2 = "</br>" ;
+
+for(var i = n1; i < n2 ; i++){
+
+c0 = Valid_Comment(i,"")
+
+  c0 = c0.replace(/"/g, "'");
+  c0 = c0.replace(/(\r\n|\n|\r)/gm, ""); 
+  c0 = c0.replace(/<[^>]*>/g, '');
+  c2 = c2 + "<span style='color:blue'>--- " + d[0].studentTasksInfo.diaryTasks[i].date + " [ " + Valid_Ttype(i,"") + " ] " + Valid_Job(i,"") + "</span></br>" + c0 + "</br>\n"
+}
+
+c2 = c2.slice(0,c2.length-2);
+
+ // new comment
+ 
+ $$("cmnt1").setHTML(c2); 
+
+ 
+
+bldate = "";
+
+for(var i = n1; i < n2 ; i++){
+if ( Valid_km(i,0) == 0 ) {
+bldate = bldate + d[0].studentTasksInfo.diaryTasks[i].date + ","
+}
+}
+
+//console.log(bldate);
+
+
+e1 = Math.max(Valid_km(n1+0,0),Valid_km(n1+7,0),Valid_km(n1+14,0));
+e2 = Math.max(Valid_km(n1+1,0),Valid_km(n1+8,0),Valid_km(n1+15,0));
+e3 = Math.max(Valid_km(n1+2,0),Valid_km(n1+9,0),Valid_km(n1+16,0));
+e4 = Math.max(Valid_km(n1+3,0),Valid_km(n1+10,0),Valid_km(n1+17,0));
+e5 = Math.max(Valid_km(n1+4,0),Valid_km(n1+11,0),Valid_km(n1+18,0));
+e6 = Math.max(Valid_km(n1+5,0),Valid_km(n1+12,0),Valid_km(n1+19,0));
+e7 = Math.max(Valid_km(n1+6,0),Valid_km(n1+13,0),Valid_km(n1+20,0));
+
+
+
+//function Valid_Pace(r,s,t) {
+//  try {
+//const tmp = [];
+//for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+// for(var j=0; j < d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments.length ; j++){
+// tmp.push(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments[j].pace);
+// }
+//}
+//        return tmp[s];
+//
+//  } catch {
+//    return t;
+//  }
+//}
+//============================
+
+
+ind1 = 0;
+ind2 = 0;
+ind3 = 0;
+
+ee = 0;
+
+
+$$('cal1').setValue(new Date());
+$$('cal2').setValue(null);
+$$('cal3').setValue(null);
+
+setind();
+
+updateTable1(ind1, ind2, ind3);
+updateChartData(ind1, ind2, ind3);
+updateChartData2(ind1, ind2, ind3);
+updateBarData(ind1, ind2, ind3);
+
+
+}
+
+//1000008935
+
+function Valid_id() {
+  try {
+    return d[0].studentInfo.id;
+  } catch {
+    return "";
+  }
+}
+
 
 
 function Valid_Student() {
@@ -98,6 +581,25 @@ function Valid_Student() {
     return "";
   }
 }
+
+function Valid_Student_dd(dd) {
+  try {
+    t=dd[0].studentInfo.firstName + " " + dd[0].studentInfo.lastName;
+    return t.trim();
+  } catch {
+    return "";
+  }
+}
+
+
+function formatDate(date) {
+    // Разделяет "2023-03-15" на ["2023", "03", "15"]
+    const parts = date.split('-');
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+
+
 
 function Valid_Trainer() {
   try {
@@ -179,32 +681,6 @@ var tr = ['','легко','нормально','тяжело, но сделал'
   }
 }
 
-n2 = d[0].studentTasksInfo.diaryTasks.length;
-n1 = n2-21;
-
-c2 = "</br>" ;
-
-for(var i = n1; i < n2 ; i++){
-
-c0 = Valid_Comment(i,"")
-
-  c0 = c0.replace(/"/g, "'");
-  c0 = c0.replace(/(\r\n|\n|\r)/gm, ""); 
-  c0 = c0.replace(/<[^>]*>/g, '');
-  c2 = c2 + "<span style='color:blue'>--- " + d[0].studentTasksInfo.diaryTasks[i].date + " [ " + Valid_Ttype(i,"") + " ] " + Valid_Job(i,"") + "</span></br>" + c0 + "</br>\n"
-}
-
-c2 = c2.slice(0,c2.length-2);
-
-//document.getElementById('output').textContent = c2; 
-
-cmnt1= { id: "cmnt1",
-  type:"space",
-//      width:400,
-      height: 820,
-	  scroll:"y",
-      template: c2
- };
 
 
 function Valid_km(r,t) {
@@ -256,51 +732,6 @@ function Valid_C(r,t) {
   }
 }
 
- 
-
-bldate = "";
-
-for(var i = n1; i < n2 ; i++){
-if ( Valid_km(i,0) == 0 ) {
-bldate = bldate + d[0].studentTasksInfo.diaryTasks[i].date + ","
-}
-}
-
-//console.log(bldate);
-
-
-e1 = Math.max(Valid_km(n1+0,0),Valid_km(n1+7,0),Valid_km(n1+14,0));
-e2 = Math.max(Valid_km(n1+1,0),Valid_km(n1+8,0),Valid_km(n1+15,0));
-e3 = Math.max(Valid_km(n1+2,0),Valid_km(n1+9,0),Valid_km(n1+16,0));
-e4 = Math.max(Valid_km(n1+3,0),Valid_km(n1+10,0),Valid_km(n1+17,0));
-e5 = Math.max(Valid_km(n1+4,0),Valid_km(n1+11,0),Valid_km(n1+18,0));
-e6 = Math.max(Valid_km(n1+5,0),Valid_km(n1+12,0),Valid_km(n1+19,0));
-e7 = Math.max(Valid_km(n1+6,0),Valid_km(n1+13,0),Valid_km(n1+20,0));
-
-
-
-//function Valid_Pace(r,s,t) {
-//  try {
-//const tmp = [];
-//for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
-// for(var j=0; j < d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments.length ; j++){
-// tmp.push(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments[j].pace);
-// }
-//}
-//        return tmp[s];
-//
-//  } catch {
-//    return t;
-//  }
-//}
-//============================
-
-
-ind1 = 0;
-ind2 = 0;
-ind3 = 0;
-
-ee = 0;
 
 function setind() {
 
@@ -339,24 +770,6 @@ ind3 = "";
 
 }
 
-//function Set_ind() {
-//  try {
-
-//n2 = d[0].studentTasksInfo.diaryTasks.length;
-//n1 = n2-21;
-
-
-
-//alert(ind1);
-
-//return;
-
-//  } catch {
-//    return;
-//  }
-//}
-
-//Set_ind();
 
 
 
@@ -741,10 +1154,233 @@ return mm + ":" + ss;
 
 
 
+let distn = ["200","1000","5000","10000","21097"];
+
+
+function updateBarData(ind1, ind2, ind3) {
+    var f1 = [];
+    
+    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
+    for(var i = 0; i < 5; i++){
+        var item = { dist: distn[i] };
+        item.sales3 = (ind3 !== "") ? eval('Valid_M' + distn[i] + '(ind3, "");') * -1 : "";
+        item.sales2 = (ind2 !== "") ? eval('Valid_M' + distn[i] + '(ind2, "");') * -1 : "";
+        item.sales  = (ind1 !== "") ? eval('Valid_M' + distn[i] + '(ind1, "");') * -1 : "";
+        f1.push(item);
+    }
+
+    var chart = $$("ddcol"); // используйте ID, который вы задали в конфиге
+    if (chart) {
+        // 1. Очищаем старые данные
+        chart.clearAll();
+        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
+        chart.parse(f1);
+    }
+
+//console.log(f1);
+
+}
+
+
+function updateChartData(ind1, ind2, ind3) {
+    var f1 = [];
+    
+    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
+    for(var i = 0; i < 24; i++){
+        var item = { m: slots[i] };
+        item.pace14 = (ind3 !== "") ? Valid_Slot(ind3, i, "") : null;
+        item.pace7  = (ind2 !== "") ? Valid_Slot(ind2, i, "") : null;
+        item.pace0  = (ind1 !== "") ? Valid_Slot(ind1, i, "") : null;
+        f1.push(item);
+    }
+
+    var chart = $$("gslot"); // используйте ID, который вы задали в конфиге
+    if (chart) {
+        // 1. Очищаем старые данные
+        chart.clearAll();
+        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
+        chart.parse(f1);
+    }
+
+
+
+//console.log(f1);
+
+}
+
+function updateChartData2(ind1, ind2, ind3) {
+    var ff2 = [];
+
+ ee = Math.max(Valid_km(ind1,0),Valid_km(ind2,0),Valid_km(ind3,0));
+   
+    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
+    for(var i = 0; i < ee; i++){
+        var item = { km: (i+1) };
+        item.pace15 = (ind3 !== "") ? Valid_Pace(ind3, i, "") * -1 : null;
+        item.pace8  = (ind2 !== "") ? Valid_Pace(ind2, i, "") * -1 : null;
+        item.pace1  = (ind1 !== "") ? Valid_Pace(ind1, i, "") * -1 : null;
+        ff2.push(item);
+    }
+
+//console.log(ff2);
+
+    var chart = $$("gpace"); // используйте ID, который вы задали в конфиге
+    if (chart) {
+        // 1. Очищаем старые данные
+        chart.clearAll();
+        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
+        chart.parse(ff2);
+    }
+
+//console.log(f2);
+}
+
+function updateTable1(ind1, ind2, ind3) {
+
+ $$("ddtable").clearAll();
+
+tbl = "" ;
+//if ( ind1 > 0 ) {
+//tbl = tbl + '{ "День":"' + formatDate(d[0].studentTasksInfo.diaryTasks[ind1].date) + '","Тип":"' + Valid_Ttype(ind1,"") +
+//      '","Сложность":"' + d[0].studentTasksInfo.diaryTasks[ind1].reportParameters.difficulty + '","Погода":"' + d[0].studentTasksInfo.diaryTasks[ind1].tracks[0].json.weather.temp_c +
+//      ' C","Обьем":"' +  d[0].studentTasksInfo.diaryTasks[ind1].kmCompleted + ' km","макс.пульс":"' + Valid_MaxHeart(ind1,"") +
+//	  '","GS":"' + Valid_gs(ind1,"") + 
+//	  '"},\n'
+
+//tbl = tbl + '{ "den":"' + reda + formatDate(d[0].studentTasksInfo.diaryTasks[ind1].date) + '","type":"' + Valid_Ttype(ind1,"") +
+//      '","dific":"' + Valid_trubl(ind1,"") + '","weather":"' + d[0].studentTasksInfo.diaryTasks[ind1].tracks[0].json.weather.temp_c +
+//      ' C","km":"' +  d[0].studentTasksInfo.diaryTasks[ind1].kmCompleted + ' km","mhrt":"' + Valid_MaxHeart(ind1,"") +
+//	  '","dgs":"' + Valid_gs(ind1,"") + 
+//	  '"},\n'
+
+ tbl = tbl + '{ "param":"тип тренировки","s1":"' + Valid_Ttype(ind1,"") + '","s2":"' + Valid_Ttype(ind2,"") + '","s3":"' + Valid_Ttype(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"самооценка тренировки","s1":"' + Valid_trubl(ind1,"") + '","s2":"' + Valid_trubl(ind2,"") + '","s3":"' + Valid_trubl(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"погода, С","s1":"' + Valid_C(ind1,"") + '","s2":"' + Valid_C(ind2,"") + '","s3":"' + Valid_C(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"общая дистанция, км","s1":"' + Valid_kmm(ind1,"") + '","s2":"' + Valid_kmm(ind2,"") + '","s3":"' + Valid_kmm(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"максимальный пульс","s1":"' + Valid_MaxHeart(ind1,"") + '","s2":"' + Valid_MaxHeart(ind2,"") + '","s3":"' + Valid_MaxHeart(ind3,"") + '"},\n';
+ tbl = tbl + '{ "param":"параметр GS","s1":"' + Valid_gs(ind1,"") + '","s2":"' + Valid_gs(ind2,"") + '","s3":"' + Valid_gs(ind3,"") + '"},\n';
+
+//}
+
+tbl = "[\n" + tbl.slice(0,tbl.length-2) + "\n]" ;	  
+
+
+ $$("ddtable").parse(tbl);
+
+}
+
+
+function main_process() {
+
+
+//document.getElementById('output').textContent = c.slice(0, 300) + "\n=================================================\n" + c.slice(-400);  
+
+//document.getElementById('student').textContent = 'student:'  + '        ' + Valid_Student();
+//document.getElementById('trainer').textContent = 'trainer:'  + '        ' + Valid_Trainer();
+//document.getElementById('ffile').textContent = 'file:'       + '        ' + fff;
+//document.getElementById('inputfile').setAttribute("type", "hidden");
+
+
+n2 = d[0].studentTasksInfo.diaryTasks.length;
+n1 = n2-21;
+
+c2 = "</br>" ;
+
+for(var i = n1; i < n2 ; i++){
+
+c0 = Valid_Comment(i,"")
+
+  c0 = c0.replace(/"/g, "'");
+  c0 = c0.replace(/(\r\n|\n|\r)/gm, ""); 
+  c0 = c0.replace(/<[^>]*>/g, '');
+  c2 = c2 + "<span style='color:blue'>--- " + d[0].studentTasksInfo.diaryTasks[i].date + " [ " + Valid_Ttype(i,"") + " ] " + Valid_Job(i,"") + "</span></br>" + c0 + "</br>\n"
+}
+
+c2 = c2.slice(0,c2.length-2);
+
+//document.getElementById('output').textContent = c2; 
+
+cmnt1= { id: "cmnt1",
+  type:"space",
+//      width:400,
+//      height: 820,
+      height: 798,
+	  scroll:"y",
+      template: c2
+ };
+
+
+ 
+
+bldate = "";
+
+for(var i = n1; i < n2 ; i++){
+if ( Valid_km(i,0) == 0 ) {
+bldate = bldate + d[0].studentTasksInfo.diaryTasks[i].date + ","
+}
+}
+
+//console.log(bldate);
+
+
+e1 = Math.max(Valid_km(n1+0,0),Valid_km(n1+7,0),Valid_km(n1+14,0));
+e2 = Math.max(Valid_km(n1+1,0),Valid_km(n1+8,0),Valid_km(n1+15,0));
+e3 = Math.max(Valid_km(n1+2,0),Valid_km(n1+9,0),Valid_km(n1+16,0));
+e4 = Math.max(Valid_km(n1+3,0),Valid_km(n1+10,0),Valid_km(n1+17,0));
+e5 = Math.max(Valid_km(n1+4,0),Valid_km(n1+11,0),Valid_km(n1+18,0));
+e6 = Math.max(Valid_km(n1+5,0),Valid_km(n1+12,0),Valid_km(n1+19,0));
+e7 = Math.max(Valid_km(n1+6,0),Valid_km(n1+13,0),Valid_km(n1+20,0));
+
+
+
+//function Valid_Pace(r,s,t) {
+//  try {
+//const tmp = [];
+//for(var i=0; i < d[0].studentTasksInfo.diaryTasks[r].tracks.length ; i++){
+// for(var j=0; j < d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments.length ; j++){
+// tmp.push(d[0].studentTasksInfo.diaryTasks[r].tracks[i].json.segments[j].pace);
+// }
+//}
+//        return tmp[s];
+//
+//  } catch {
+//    return t;
+//  }
+//}
+//============================
+
+
+ind1 = 0;
+ind2 = 0;
+ind3 = 0;
+
+ee = 0;
+
+
+//function Set_ind() {
+//  try {
+
+//n2 = d[0].studentTasksInfo.diaryTasks.length;
+//n1 = n2-21;
+
+
+
+//alert(ind1);
+
+//return;
+
+//  } catch {
+//    return;
+//  }
+//}
+
+//Set_ind();
+
+
 
 // -----------------------------------------
 
-//ind1=6
+
 
 f1 = "" ;
 
@@ -830,7 +1466,7 @@ f2 = "[\n" + f2.slice(0,f2.length-2) + "\n]" ;
 
 gg = JSON.parse(f2);
 
-gr1 = {  width:720,  height:194,  type:"clean", 
+gr1 = {    width:720,  height:194,  type:"clean", 
 cols:[
         {
           view:"chart",
@@ -867,6 +1503,9 @@ cols:[
 ]
 };
 
+
+
+//ind1=6
 
 f3 = "" ;
 
@@ -1109,7 +1748,9 @@ date2.setDate(date2.getDate() - 20);
 spacer = {  
 view: "label", 
 id: "spa1", 
-label: "",  
+label:  `
+    <img src="favicon.ico" style="width:44px; height:34px; vertical-align:middle; margin-right:8px;">
+    <span style='font-style:italic; font-family:"Times New Roman";'>Дополнение к s10.run</span>`,  
 width: 220  
 //height: 50, 
 };
@@ -1209,34 +1850,6 @@ dtable = {
 };
 
 
-
-let distn = ["200","1000","5000","10000","21097"];
-
-
-function updateBarData(ind1, ind2, ind3) {
-    var f1 = [];
-    
-    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
-    for(var i = 0; i < 5; i++){
-        var item = { dist: distn[i] };
-        item.sales3 = (ind3 !== "") ? eval('Valid_M' + distn[i] + '(ind3, "");') * -1 : "";
-        item.sales2 = (ind2 !== "") ? eval('Valid_M' + distn[i] + '(ind2, "");') * -1 : "";
-        item.sales  = (ind1 !== "") ? eval('Valid_M' + distn[i] + '(ind1, "");') * -1 : "";
-        f1.push(item);
-    }
-
-    var chart = $$("ddcol"); // используйте ID, который вы задали в конфиге
-    if (chart) {
-        // 1. Очищаем старые данные
-        chart.clearAll();
-        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
-        chart.parse(f1);
-    }
-
-//console.log(f1);
-
-}
-
 var multiple_dataset = [
 	{ sales:"-3.5", sales2:"", sales3:"", dist:"200" },
 	{ sales:"-4.0", sales2:"", sales3:"", dist:"1000" },
@@ -1310,6 +1923,43 @@ dcol = {
 };
 
 
+btn_sync = { 
+          view: "button", type: "icon", icon: "wxi-sync", 
+          tooltip: "загрузить", 
+          width: 45, height: 38, css: "webix_primary", 
+          click: extractId
+        };
+
+fld_search = { 
+          view: "search", id: searchId, placeholder: "#1000...# Имя Атлета",
+          gravity: 3, 
+          suggest: { body: { id: listId, data: [] } },
+          on: { 
+            onAfterRender: function() {
+              webix.event(this.getInputNode(), "click", () => {
+                var suggest = webix.$$(this.config.suggest);
+                if (suggest && !suggest.isVisible()) suggest.show(this.getInputNode());
+              });
+            },
+            onKeyPress: function(code) {
+              if (code === 13) { addItem(); webix.$$(this.config.suggest).hide(); return false; }
+            }
+          }
+        };
+
+btn_del = { 
+          view: "button", type: "icon", icon: "wxi-trash", 
+          id: trashBtnId, width: 45, height: 38, css: "webix_danger", 
+          tooltip: "Клик — удалить одну запись. Ctrl+Клик — удалить всё.",
+          click: function(id, e) {
+            if (e.ctrlKey) clearAllData(); 
+            else removeItem();
+          }
+        };
+
+
+
+
 webix.ui(
 { "id":"ini",
 "rows":[ { view:"resizer" },
@@ -1325,7 +1975,7 @@ webix.ui(
        },  
 	   { view:"resizer" },
        { "id":"form2%" , 
-        "rows":[
+        "rows":[ {"cols": [ btn_sync,fld_search,btn_del ]},
                  cmnt1 
 			   ]
 		}  
@@ -1364,8 +2014,6 @@ updateBarData(ind1, ind2, ind3);
 
 /////////////////////////////////////////////////
 
-/////////////////////////////////////////////////
-
 reda = "<span style='color:#EC3774'>" ;
 
 tbl = "" ;
@@ -1396,98 +2044,21 @@ tbl = "[\n" + tbl.slice(0,tbl.length-2) + "\n]" ;
 //console.log(tbl);
 
 
-function updateChartData(ind1, ind2, ind3) {
-    var f1 = [];
-    
-    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
-    for(var i = 0; i < 24; i++){
-        var item = { m: slots[i] };
-        item.pace14 = (ind3 !== "") ? Valid_Slot(ind3, i, "") : null;
-        item.pace7  = (ind2 !== "") ? Valid_Slot(ind2, i, "") : null;
-        item.pace0  = (ind1 !== "") ? Valid_Slot(ind1, i, "") : null;
-        f1.push(item);
-    }
-
-    var chart = $$("gslot"); // используйте ID, который вы задали в конфиге
-    if (chart) {
-        // 1. Очищаем старые данные
-        chart.clearAll();
-        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
-        chart.parse(f1);
-    }
-
-
-
-//console.log(f1);
-
-}
-
-function updateChartData2(ind1, ind2, ind3) {
-    var ff2 = [];
-
- ee = Math.max(Valid_km(ind1,0),Valid_km(ind2,0),Valid_km(ind3,0));
-   
-    // Формируем данные сразу как массив объектов (не нужно мучаться со строкой и JSON.parse)
-    for(var i = 0; i < ee; i++){
-        var item = { km: (i+1) };
-        item.pace15 = (ind3 !== "") ? Valid_Pace(ind3, i, "") * -1 : null;
-        item.pace8  = (ind2 !== "") ? Valid_Pace(ind2, i, "") * -1 : null;
-        item.pace1  = (ind1 !== "") ? Valid_Pace(ind1, i, "") * -1 : null;
-        ff2.push(item);
-    }
-
-//console.log(ff2);
-
-    var chart = $$("gpace"); // используйте ID, который вы задали в конфиге
-    if (chart) {
-        // 1. Очищаем старые данные
-        chart.clearAll();
-        // 2. Загружаем новые. Webix заново применит 'scheme' (группировку) к ним.
-        chart.parse(ff2);
-    }
-
-//console.log(f2);
-}
-
-function updateTable1(ind1, ind2, ind3) {
-
- $$("ddtable").clearAll();
-
-tbl = "" ;
-//if ( ind1 > 0 ) {
-//tbl = tbl + '{ "День":"' + formatDate(d[0].studentTasksInfo.diaryTasks[ind1].date) + '","Тип":"' + Valid_Ttype(ind1,"") +
-//      '","Сложность":"' + d[0].studentTasksInfo.diaryTasks[ind1].reportParameters.difficulty + '","Погода":"' + d[0].studentTasksInfo.diaryTasks[ind1].tracks[0].json.weather.temp_c +
-//      ' C","Обьем":"' +  d[0].studentTasksInfo.diaryTasks[ind1].kmCompleted + ' km","макс.пульс":"' + Valid_MaxHeart(ind1,"") +
-//	  '","GS":"' + Valid_gs(ind1,"") + 
-//	  '"},\n'
-
-//tbl = tbl + '{ "den":"' + reda + formatDate(d[0].studentTasksInfo.diaryTasks[ind1].date) + '","type":"' + Valid_Ttype(ind1,"") +
-//      '","dific":"' + Valid_trubl(ind1,"") + '","weather":"' + d[0].studentTasksInfo.diaryTasks[ind1].tracks[0].json.weather.temp_c +
-//      ' C","km":"' +  d[0].studentTasksInfo.diaryTasks[ind1].kmCompleted + ' km","mhrt":"' + Valid_MaxHeart(ind1,"") +
-//	  '","dgs":"' + Valid_gs(ind1,"") + 
-//	  '"},\n'
-
- tbl = tbl + '{ "param":"тип тренировки","s1":"' + Valid_Ttype(ind1,"") + '","s2":"' + Valid_Ttype(ind2,"") + '","s3":"' + Valid_Ttype(ind3,"") + '"},\n';
- tbl = tbl + '{ "param":"самооценка тренировки","s1":"' + Valid_trubl(ind1,"") + '","s2":"' + Valid_trubl(ind2,"") + '","s3":"' + Valid_trubl(ind3,"") + '"},\n';
- tbl = tbl + '{ "param":"погода, С","s1":"' + Valid_C(ind1,"") + '","s2":"' + Valid_C(ind2,"") + '","s3":"' + Valid_C(ind3,"") + '"},\n';
- tbl = tbl + '{ "param":"общая дистанция, км","s1":"' + Valid_kmm(ind1,"") + '","s2":"' + Valid_kmm(ind2,"") + '","s3":"' + Valid_kmm(ind3,"") + '"},\n';
- tbl = tbl + '{ "param":"максимальный пульс","s1":"' + Valid_MaxHeart(ind1,"") + '","s2":"' + Valid_MaxHeart(ind2,"") + '","s3":"' + Valid_MaxHeart(ind3,"") + '"},\n';
- tbl = tbl + '{ "param":"параметр GS","s1":"' + Valid_gs(ind1,"") + '","s2":"' + Valid_gs(ind2,"") + '","s3":"' + Valid_gs(ind3,"") + '"},\n';
-
-//}
-
-tbl = "[\n" + tbl.slice(0,tbl.length-2) + "\n]" ;	  
-
-
- $$("ddtable").parse(tbl);
-
-}
-
 
   $$("ddtable").clearAll();
   $$("ddtable").parse(tbl);
 
+//================================
+//loadData(); 
+$$(listId).parse(webix.storage.local.get("my_final_data"));
+//================================
 
+addItemEx("#" + Valid_id() + "#  " + Valid_Student() + "  Тренер: " + Valid_Trainer());
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------
+// init calendar
+//--------------------------------------------------------------------------------------------------------------------------------------
 
 
   $$("cal1").attachEvent("onChange", function(a,b) {
@@ -1594,31 +2165,24 @@ ind3 = "";
 
 
 });
-  
 
-
-// День -- d[0].studentTasksInfo.diaryTasks[i].date
-// Тип -- d[0].studentTasksInfo.diaryTasks[i].type
-// Сложность -- d[0].studentTasksInfo.diaryTasks[i].reportParameters.difficulty
-// Погода -- d[0].studentTasksInfo.diaryTasks[i].tracks[0].json.weather.temp_c
-// Обьем -- d[0].studentTasksInfo.diaryTasks[i].kmCompleted
-// макс.пульс -- Valid_MaxHeart()
-// GS -- Valid_gs()
+//--------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------
 
 
 
-
-                }
-
- //               fr.readAsText(this.files[0]);
-
-});
+}
 
 
+//--------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------
 
 
 
 </script>
+
 </body>
 
 </html>
